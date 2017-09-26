@@ -78,7 +78,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter
 
         http.authorizeRequests()
         // 例如以下代码指定了/other和/custom不需要任何认证就可以访问，其他的路径都必须通过身份验证。
-                .antMatchers("/allow1/**", "/allow2/**").permitAll().anyRequest().authenticated().and()
+                .antMatchers("/OAuth/**", "/allow2/**").permitAll().anyRequest().authenticated().and()
                 // 通过formLogin()定义当需要用户登录时候，转到的登录页面。
                 .formLogin().loginPage("/login").successHandler(loginSuccessHandler()).failureHandler(loginFailHandler()).authenticationDetailsSource(authenticationDetailsSource).permitAll()
                 .and()

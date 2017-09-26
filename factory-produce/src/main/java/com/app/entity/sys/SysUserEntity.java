@@ -20,7 +20,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "t_sys_user")
-public class SysUserEntity implements Serializable
+public class SysUserEntity  implements Serializable
 {
 
     /**

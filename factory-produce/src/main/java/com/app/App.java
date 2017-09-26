@@ -6,11 +6,16 @@ package com.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+
+import com.app.entity.common.CacheVo;
 
 @SpringBootApplication
 public class App {
 
 	public static void main(String[] args) {
-		SpringApplication.run(App.class, args);
+		ApplicationContext applicationContext =SpringApplication.run(App.class, args);
+		CacheVo.setApplicationContext(applicationContext);
+		
 	}
 }

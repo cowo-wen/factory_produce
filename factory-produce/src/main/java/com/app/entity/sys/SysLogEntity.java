@@ -7,11 +7,14 @@ package com.app.entity.sys;
 import java.io.Serializable;
 import java.util.Date;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import com.app.entity.common.CacheVo;
 
 /**
  * 功能说明：系统日志表
@@ -20,7 +23,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "t_sys_log")
-public class SysLogEntity implements Serializable
+public class SysLogEntity extends CacheVo implements Serializable
 {
 
 	private static final long serialVersionUID = -9178816069533396484L;
@@ -39,22 +42,31 @@ public class SysLogEntity implements Serializable
 
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name="log_id")
     private Long logId;
 
+	@Column(name="application_id")
     private long applicationId;
 
+	@Column
     private long dataId;
     
+	@Column
     private String message;
     
+	@Column
     private String ip;
     
+	@Column
     private int type;
     
+	@Column
     private long userId;
     
+	@Column
     private Date createTime;
     
+	@Column
     private Date operatorTime;
     
     
@@ -69,6 +81,13 @@ public class SysLogEntity implements Serializable
 
 	public SysLogEntity()
     {
+    	this.createTime = new Date();
+    	this.operatorTime = this.createTime;
+    }
+	
+	public SysLogEntity(String name)
+    {
+		super(name);
     	this.createTime = new Date();
     	this.operatorTime = this.createTime;
     }

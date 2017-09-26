@@ -8,6 +8,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -23,10 +25,12 @@ import com.app.entity.sys.SysUserEntity;
 @Service
 public class StudentService
 {
+	public static Log logger = LogFactory.getLog(StudentService.class);
     @Autowired
     private JdbcTemplate jdbcTemplate;
     
     public List<SysUserEntity> getList(){
+    	logger.error("-------------"+jdbcTemplate);
         String sql = "SELECT ID,username,password FROM t_sys_user";
         return (List<SysUserEntity>) jdbcTemplate.query(sql, new RowMapper<SysUserEntity>(){
 

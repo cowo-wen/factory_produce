@@ -17,21 +17,35 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @PropertySource("classpath:sys_config.properties")
-@ConfigurationProperties(prefix="")
+@ConfigurationProperties(prefix="redis_core_database")
 public class SysConfigProperties
 {
-    private String redis_connection_source;
+    private String redis_ip;
+    
+    private String redis_port;
+
+	public String getRedis_ip() {
+		return redis_ip;
+	}
+
+	public void setRedis_ip(String redis_ip) {
+		this.redis_ip = redis_ip;
+	}
+
+	public String getRedis_port() {
+		return redis_port;
+	}
+
+	public void setRedis_port(String redis_port) {
+		this.redis_port = redis_port;
+	}
+
+	
+
+	
+	
     
 
-    public String getRedis_connection_source()
-    {
-        return redis_connection_source;
-    }
-
-    public void setRedis_connection_source(String redis_connection_source)
-    {
-        this.redis_connection_source = redis_connection_source;
-    }
     
     
     

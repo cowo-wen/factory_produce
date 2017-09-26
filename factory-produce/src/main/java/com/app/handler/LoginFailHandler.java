@@ -14,8 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 
+import com.app.config.SysConfigProperties;
 import com.app.entity.sys.SysLogEntity;
 import com.app.service.sys.SysLogRepository;
+import com.app.util.RedisAPI;
 
 /**
  * 功能说明：
@@ -28,7 +30,8 @@ public class LoginFailHandler implements  AuthenticationFailureHandler {
 	@Autowired
     private SysLogRepository sysLogRepository;
 	
-   
+	@Autowired
+    private SysConfigProperties sysConfig;
       
     public String getIpAddress(HttpServletRequest request){      
         String ip = request.getHeader("x-forwarded-for");      
@@ -52,7 +55,7 @@ public class LoginFailHandler implements  AuthenticationFailureHandler {
 
 	@Override
 	public void onAuthenticationFailure(HttpServletRequest request,HttpServletResponse response,AuthenticationException exception)throws IOException, ServletException {   
-	        SysLogEntity sysLogEntity = new SysLogEntity();
+	        SysLogEntity sysLogEntity = new SysLogEntity(RedisAPI.REDIS_CORE_DATABASE);
 	        
 	        sysLogEntity.setUserId(0L);
 	        sysLogEntity.setApplicationId(1L);
@@ -63,8 +66,14 @@ public class LoginFailHandler implements  AuthenticationFailureHandler {
 	        sysLogEntity.setMessage(request.getParameter("user_name")+exception.getMessage());
 	        
 	        
-	        System.out.println(exception.getMessage());
+	        
 	        sysLogRepository.save(sysLogEntity);
+	        System.out.println(exception.getMessage() +"   ---- "+sysLogEntity.getLogId() +" --- "+sysConfig.getRedis_ip());
+	        sysLogEntity.insertInNosql();
+	        
+	        sysLogEntity.setLogId(33L);
+	        sysLogEntity = (SysLogEntity) sysLogEntity.loadVo();
+	        
 	        response.sendRedirect("/login.html?type=1");
 		
 	}    
