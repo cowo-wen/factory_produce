@@ -48,10 +48,10 @@ public class SysLogEntity extends CacheVo implements Serializable
 	@Column(name="application_id")
     private long applicationId;
 
-	@Column
+	@Column(name="data_id")
     private long dataId;
     
-	@Column
+	@Column(name="message")
     private String message;
     
 	@Column

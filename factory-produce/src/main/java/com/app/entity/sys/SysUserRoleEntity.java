@@ -7,6 +7,7 @@ package com.app.entity.sys;
 import java.io.Serializable;
 import java.util.Date;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -29,14 +30,19 @@ public class SysUserRoleEntity implements Serializable {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column
 	private Long id;
 	
+	@Column
 	private Long userId;
 
+	@Column
 	private Long roleId;
 
+	@Column
 	private Date createTime;
 
+	@Column
 	private Date operatorTime;
 
 	public SysUserRoleEntity() {

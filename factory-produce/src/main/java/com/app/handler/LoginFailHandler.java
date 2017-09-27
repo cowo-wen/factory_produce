@@ -5,16 +5,22 @@
 package com.app.handler;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 
 import com.app.config.SysConfigProperties;
+import com.app.entity.common.CacheVo;
 import com.app.entity.sys.SysLogEntity;
 import com.app.service.sys.SysLogRepository;
 import com.app.util.RedisAPI;
@@ -26,7 +32,7 @@ import com.app.util.RedisAPI;
  */
 public class LoginFailHandler implements  AuthenticationFailureHandler { 
 	
-	
+	public static Log logger = LogFactory.getLog(LoginFailHandler.class);
 	@Autowired
     private SysLogRepository sysLogRepository;
 	
@@ -64,16 +70,21 @@ public class LoginFailHandler implements  AuthenticationFailureHandler {
 	        //System.out.println(exception.getLocalizedMessage());
 	        //exception.printStackTrace();
 	        sysLogEntity.setMessage(request.getParameter("user_name")+exception.getMessage());
-	        
-	        
-	        
 	        sysLogRepository.save(sysLogEntity);
-	        System.out.println(exception.getMessage() +"   ---- "+sysLogEntity.getLogId() +" --- "+sysConfig.getRedis_ip());
-	        sysLogEntity.insertInNosql();
-	        
-	        sysLogEntity.setLogId(33L);
-	        sysLogEntity = (SysLogEntity) sysLogEntity.loadVo();
-	        
+	        sysLogEntity.setLogId(3L);
+	        sysLogEntity.loadVo();
+	        logger.error("----aaa"+sysLogEntity.toString());
+	        Map<String,Object> map = new HashMap<String,Object>();
+	        map.put("field_1", "application_id");
+	        map.put("field_2", "data_id");
+	        map.put("value_1", "11");
+	        map.put("value_2", "101");
+	        @SuppressWarnings("unchecked")
+			List<SysLogEntity> list= (List<SysLogEntity>) sysLogEntity.getCustomCache(map,"type");
+	        for(SysLogEntity log : list){
+	        	logger.error("-------"+log.getLogId()+"   -------    "+log.getMessage());
+	        }
+	        logger.error("-------"+sysLogEntity.toString());
 	        response.sendRedirect("/login.html?type=1");
 		
 	}    

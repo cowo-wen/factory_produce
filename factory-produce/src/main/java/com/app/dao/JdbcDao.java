@@ -1,5 +1,6 @@
 package com.app.dao;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
@@ -21,6 +22,12 @@ public class JdbcDao {
 		String sql = "select * from " + table + " where " + id + "="+ Long.parseLong(value.toString());
 		Map<String, Object> mapVo = jdbcTemplate.queryForMap(sql);
 		return mapVo;
+	}
+	
+	@Transactional(readOnly = true)  
+	public List<Map<String, Object>> getList(String sql) {
+		List<Map<String, Object>> list = jdbcTemplate.queryForList(sql);
+		return list;
 	}
 
 	public JdbcTemplate getJdbcTemplate() {
