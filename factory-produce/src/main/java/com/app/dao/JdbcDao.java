@@ -11,6 +11,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.xx.util.string.Format;
+
 @Service
 public class JdbcDao {
 	public static Log logger = LogFactory.getLog(JdbcDao.class);
@@ -19,7 +21,12 @@ public class JdbcDao {
 	
 	@Transactional(readOnly = true)  
 	public Map<String, Object> getVo(String table, Object value, String id) {
-		String sql = "select * from " + table + " where " + id + "="+ Long.parseLong(value.toString());
+		String sql = null;
+		if(Format.isNumeric(value.toString())){
+			sql = "select * from " + table + " where " + id + "="+ Long.parseLong(value.toString());
+		}else{
+			sql = "select * from " + table + " where " + id + "='"+ value.toString()+"'";
+		}
 		Map<String, Object> mapVo = jdbcTemplate.queryForMap(sql);
 		return mapVo;
 	}

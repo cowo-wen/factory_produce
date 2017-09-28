@@ -14,6 +14,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.app.entity.common.CacheVo;
+
 /**
  * 功能说明：系统用户表
  * 
@@ -21,19 +23,21 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "t_sys_user")
-public class SysUserEntity  implements Serializable
+public class SysUserEntity extends CacheVo  implements Serializable
 {
 
     /**
      * 
      */
     private static final long serialVersionUID = -7577009420662238475L;
-
-
+	
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private Long userId;
+    
+    @Column
+    private Integer type;
 
     @Column
     private String userName;
@@ -55,6 +59,13 @@ public class SysUserEntity  implements Serializable
     	this.createTime = new Date();
     	this.operatorTime = this.createTime;
     }
+    
+    public SysUserEntity(String name)
+    {
+		super(name);
+    	this.createTime = new Date();
+    	this.operatorTime = this.createTime;
+    }
 
     public SysUserEntity(SysUserEntity user)
     {
@@ -65,6 +76,14 @@ public class SysUserEntity  implements Serializable
     }
 
 	
+
+	public Integer getType() {
+		return type;
+	}
+
+	public void setType(Integer type) {
+		this.type = type;
+	}
 
 	public Long getUserId() {
 		return userId;
@@ -101,7 +120,6 @@ public class SysUserEntity  implements Serializable
 	public Date getCreateTime() {
 		return createTime;
 	}
-
 	public void setCreateTime(Date createTime) {
 		this.createTime = createTime;
 	}

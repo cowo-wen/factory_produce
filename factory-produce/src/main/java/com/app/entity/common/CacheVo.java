@@ -25,6 +25,7 @@ import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.xx.util.string.Format;
 
 /**
  * 功能说明：缓存表
@@ -101,7 +102,7 @@ public class CacheVo {
 		return (JdbcDao)applicationContext.getBean("jdbcDao");
 	}
 	
-	public synchronized void setFieldValue(Field field,Object object){
+	private synchronized void setFieldValue(Field field,Object object){
 		synchronized (field) {
 			try {
 				field.setAccessible(true);
@@ -114,7 +115,7 @@ public class CacheVo {
 		}
 	}
 	
-	public synchronized Object getFieldValue(Field field){
+	private synchronized Object getFieldValue(Field field){
 		try {
 			field.setAccessible(true);
 			return field.get(this);
@@ -330,7 +331,7 @@ public class CacheVo {
 		return new StringBuilder("set").append(fieldName.substring(startIndex, startIndex + 1).toUpperCase()).append(fieldName.substring(startIndex + 1)).toString();
 	}*/
 
-	public void setClassInfo(Class<?> c, String filed, Object value) {
+	private void setClassInfo(Class<?> c, String filed, Object value) {
 		if (PublicMethod.isEmptyStr(c, filed, value))
 			return;
 		if (map.containsKey(c)) {
@@ -378,8 +379,9 @@ public class CacheVo {
 		return f;
 	}
 	
-	public CacheVo setIDValue(String value){
+	private CacheVo setIDValue(String value){
 		Field f = getIdName();
+		logger.error(value+"-KKKKKKKKKKKKKKKKKKKKK-"+f.getName());
 		if(f.getType().getName().equals(Long.class.getName())){
 			setFieldValue(f,Long.parseLong(value));
 		}else if(f.getType().getName().equals(Integer.class.getName())){
@@ -435,10 +437,8 @@ public class CacheVo {
 			String key = customCacheKey(map);
 			Map<String,String> map2 = new RedisAPI(redisAPIName).hgetAll(key);
 			if(map2 == null || map2.size() == 0){
-				StringBuilder sb = new StringBuilder();
-				sb.append("select * from ").append(getTableName());
+				StringBuilder sb = new StringBuilder("select * from ").append(getTableName());
 				getSBSQL(sb,map);
-				logger.error("----------查询列表sql="+sb.toString());
 				List<Map<String,Object>> list = getJdbcDao().getList(sb.toString());
 				if(list != null && list.size() > 0){
 					map2 = new HashMap<String,String>();
@@ -478,7 +478,7 @@ public class CacheVo {
 						vo = vo.setIDValue(kv.getValue()).loadVo();
 						list.add(vo);
 					} catch (Exception e) {
-						logger.error("转换对象失败="+kv.getValue(), e);
+						logger.error(kv.getKey()+"转换对象失败="+kv.getValue(), e);
 					}
 				}
 			}
@@ -493,23 +493,44 @@ public class CacheVo {
 			
 			if(map.containsKey(FIXED_DEFINITION_FIELD_1)){
 				if(map.containsKey(FIXED_DEFINITION_VALUE_1)){
-					sb1.append(map.get(FIXED_DEFINITION_FIELD_1)).append("=").append(map.get(FIXED_DEFINITION_VALUE_1)).append("   ");
+					if(Format.isNumeric(map.get(FIXED_DEFINITION_VALUE_1).toString())){
+						sb1.append(map.get(FIXED_DEFINITION_FIELD_1)).append("=").append(map.get(FIXED_DEFINITION_VALUE_1)).append("   ");
+					}else{
+						sb1.append(map.get(FIXED_DEFINITION_FIELD_1)).append("='").append(map.get(FIXED_DEFINITION_VALUE_1)).append("'   ");
+					}
+					
 				}
 				if(map.containsKey(FIXED_DEFINITION_FIELD_2)){
 					if(map.containsKey(FIXED_DEFINITION_VALUE_2)){
-						sb1.append("   ").append(map.get(FIXED_DEFINITION_FIELD_2)).append("=").append(map.get(FIXED_DEFINITION_VALUE_2)).append("   ");
+						if(Format.isNumeric(map.get(FIXED_DEFINITION_VALUE_2).toString())){
+							sb1.append(map.get(FIXED_DEFINITION_FIELD_2)).append("=").append(map.get(FIXED_DEFINITION_VALUE_2)).append("   ");
+						}else{
+							sb1.append(map.get(FIXED_DEFINITION_FIELD_2)).append("='").append(map.get(FIXED_DEFINITION_VALUE_2)).append("'   ");
+						}
 					}
 					if(map.containsKey(FIXED_DEFINITION_FIELD_3)){
 						if(map.containsKey(FIXED_DEFINITION_VALUE_3)){
-							sb1.append("   ").append(map.get(FIXED_DEFINITION_FIELD_3)).append("=").append(map.get(FIXED_DEFINITION_VALUE_3)).append("   ");
+							if(Format.isNumeric(map.get(FIXED_DEFINITION_VALUE_3).toString())){
+								sb1.append(map.get(FIXED_DEFINITION_FIELD_3)).append("=").append(map.get(FIXED_DEFINITION_VALUE_3)).append("   ");
+							}else{
+								sb1.append(map.get(FIXED_DEFINITION_FIELD_3)).append("='").append(map.get(FIXED_DEFINITION_VALUE_3)).append("'   ");
+							}
 						}
 						if(map.containsKey(FIXED_DEFINITION_FIELD_4)){
 							if(map.containsKey(FIXED_DEFINITION_VALUE_4)){
-								sb1.append("   ").append(map.get(FIXED_DEFINITION_FIELD_4)).append("=").append(map.get(FIXED_DEFINITION_VALUE_4)).append("   ");
+								if(Format.isNumeric(map.get(FIXED_DEFINITION_VALUE_4).toString())){
+									sb1.append(map.get(FIXED_DEFINITION_FIELD_4)).append("=").append(map.get(FIXED_DEFINITION_VALUE_4)).append("   ");
+								}else{
+									sb1.append(map.get(FIXED_DEFINITION_FIELD_4)).append("='").append(map.get(FIXED_DEFINITION_VALUE_4)).append("'   ");
+								}
 							}
 							if(map.containsKey(FIXED_DEFINITION_FIELD_5)){
 								if(map.containsKey(FIXED_DEFINITION_VALUE_5)){
-									sb1.append("   ").append(map.get(FIXED_DEFINITION_FIELD_5)).append("=").append(map.get(FIXED_DEFINITION_VALUE_5)).append("   ");
+									if(Format.isNumeric(map.get(FIXED_DEFINITION_VALUE_5).toString())){
+										sb1.append(map.get(FIXED_DEFINITION_FIELD_5)).append("=").append(map.get(FIXED_DEFINITION_VALUE_5)).append("   ");
+									}else{
+										sb1.append(map.get(FIXED_DEFINITION_FIELD_5)).append("='").append(map.get(FIXED_DEFINITION_VALUE_5)).append("'   ");
+									}
 								}
 							}
 						}

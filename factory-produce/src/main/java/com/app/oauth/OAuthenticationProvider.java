@@ -6,6 +6,8 @@ package com.app.oauth;
 
 import java.util.Collection;
 
+import javax.servlet.http.HttpSession;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +21,10 @@ import org.springframework.stereotype.Component;
 import com.app.bean.SysUserDetails;
 import com.app.config.CustomWebAuthenticationDetails;
 import com.app.exception.LoginAccountStatusException;
-import com.app.service.SysUserDetailsService;
+import com.app.service.sys.SysUserDetailsService;
+import com.app.util.PublicMethod;
+import com.app.util.RedisAPI;
+import com.xx.util.string.MD5;
 
 /**
  * 功能说明：
@@ -32,22 +37,46 @@ public class OAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     private SysUserDetailsService userService;
 
+    @Autowired  
+    private HttpSession session;
     /**
      * 自定义验证方式
      */
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         CustomWebAuthenticationDetails details = (CustomWebAuthenticationDetails) authentication.getDetails();
-        logger.error("----------自定义认证------------"+details.getToken());
+        String token = details.getToken();
+        if(PublicMethod.isEmptyStr(token)){
+        	throw new LoginAccountStatusException("验证码不能为空");
+        }
+        String checkToken = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("identifyingcode:login:"+session.getId());
+        if(PublicMethod.isEmptyStr(checkToken)){
+        	throw new LoginAccountStatusException("验证码已失效");
+        }
+        
+        if(!token.equals(checkToken)){
+        	throw new LoginAccountStatusException("验证码不正确");
+        }
+        
         String username = authentication.getName();
+        logger.error("|||"+username);
+        if(PublicMethod.isEmptyStr(username)){
+        	throw new LoginAccountStatusException("用户名不能为空");
+        }
+        
         String password = (String) authentication.getCredentials();
         
+        if(PublicMethod.isEmptyStr(password)){
+        	throw new LoginAccountStatusException("密码不能为空");
+        }
+        
         SysUserDetails user = (SysUserDetails) userService.loadUserByUsername(username);
-        if(user == null){
+        logger.equals(user+"------------==========="+username);
+        if(user == null || user.getUserId() == null || user.getUserId() == 0){
             throw new LoginAccountStatusException("不存在的用户名");
         }
 
         //加密过程在这里体现
-        if (!password.equals(user.getPassword())) {
+        if (!MD5.encode(password).equals(user.getPassword())) {
             throw new LoginAccountStatusException("密码不正确");
         }
 
@@ -58,5 +87,7 @@ public class OAuthenticationProvider implements AuthenticationProvider {
     public boolean supports(Class<?> arg0) {
         return true;
     }
+    
+    
 
 }

@@ -20,9 +20,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 
 import com.app.config.SysConfigProperties;
-import com.app.entity.common.CacheVo;
+import com.app.dao.sys.SysLogRepository;
 import com.app.entity.sys.SysLogEntity;
-import com.app.service.sys.SysLogRepository;
 import com.app.util.RedisAPI;
 
 /**
@@ -69,23 +68,12 @@ public class LoginFailHandler implements  AuthenticationFailureHandler {
 	        sysLogEntity.setType(SysLogEntity.TYPE_FAIL);
 	        //System.out.println(exception.getLocalizedMessage());
 	        //exception.printStackTrace();
-	        sysLogEntity.setMessage(request.getParameter("user_name")+exception.getMessage());
+	        sysLogEntity.setMessage(request.getParameter("username")+exception.getMessage());
 	        sysLogRepository.save(sysLogEntity);
-	        sysLogEntity.setLogId(3L);
-	        sysLogEntity.loadVo();
-	        logger.error("----aaa"+sysLogEntity.toString());
-	        Map<String,Object> map = new HashMap<String,Object>();
-	        map.put("field_1", "application_id");
-	        map.put("field_2", "data_id");
-	        map.put("value_1", "11");
-	        map.put("value_2", "101");
-	        @SuppressWarnings("unchecked")
-			List<SysLogEntity> list= (List<SysLogEntity>) sysLogEntity.getCustomCache(map,"type");
-	        for(SysLogEntity log : list){
-	        	logger.error("-------"+log.getLogId()+"   -------    "+log.getMessage());
-	        }
-	        logger.error("-------"+sysLogEntity.toString());
-	        response.sendRedirect("/login.html?type=1");
+	        //sysLogEntity.setLogId(3L);
+	        //sysLogEntity.loadVo();
+	        
+	        response.sendRedirect("/login.html?message="+java.net.URLEncoder.encode(exception.getMessage(),"utf-8"));
 		
 	}    
 }  

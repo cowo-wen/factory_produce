@@ -4,15 +4,14 @@
  */
 package com.app.service.sys;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
+import com.app.dao.sys.SysUserRepository;
 import com.app.entity.sys.SysUserEntity;
 
 /**
@@ -24,21 +23,20 @@ import com.app.entity.sys.SysUserEntity;
 public class SysUserService
 {
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private SysUserRepository sysUserRepository;
     
-    public List<SysUserEntity> getList(){
-        String sql = "SELECT user_id,user_name,password FROM t_sys_user";
-        return (List<SysUserEntity>) jdbcTemplate.query(sql, new RowMapper<SysUserEntity>(){
-
-            
-            public SysUserEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
-                SysUserEntity su = new SysUserEntity();
-                su.setUserId(rs.getLong("user_id"));
-                su.setUserName(rs.getString("username"));
-                su.setPassword(rs.getString("password"));
-                return su;
-            }
-
-        });
+    public void save(SysUserEntity user) throws Exception{
+    	
+    	Map<String,Object> map = new HashMap<String,Object>();
+        map.put("field_1", "login_name");
+        map.put("value_1", user.getLoginName());
+		List<?> list = user.getCustomCache(map, "user_id");
+		if(list.size() == 0){
+			sysUserRepository.save(user);
+			user.insertInNosql();
+			user.saveCustomCache(map, "user_id", user.getUserId().toString(), user.getUserId().toString());
+		}else{
+			throw new Exception("已存在相同的登录帐号");
+		}
     }
 }

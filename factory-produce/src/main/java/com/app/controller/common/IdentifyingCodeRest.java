@@ -1,15 +1,18 @@
 package com.app.controller.common;
 
+import javax.servlet.http.HttpSession;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.google.gson.Gson;
+import com.app.util.RedisAPI;
+import com.xx.util.img.VerifyCode;
+import com.xx.util.img.VerifyCode.Img;
 
 /**
  * 功能说明：验证码接口
@@ -21,17 +24,22 @@ import com.google.gson.Gson;
 public class IdentifyingCodeRest {
     public static Log logger = LogFactory.getLog(IdentifyingCodeRest.class);
     
-    @Autowired
-	private RedisTemplate<String, String> redisTemplate;
   
+    @Autowired  
+    private HttpSession session;
     
-    @RequestMapping(method=RequestMethod.GET,value="/aaa")
-    public String index(Model model) {
-       
-    	//redisTemplate.opsForValue().set("一分钟", "60=一分钟", 60L);
-    	//redisTemplate.opsForValue().set("十分钟", "600=十分钟", 600L);
+   
+    
+    @RequestMapping(method=RequestMethod.GET,value="/base64")
+    public String base64(Model model) throws Exception{
     	
-        return new Gson().toJson(redisTemplate.opsForValue().get("一分钟").toString()+" --- "+redisTemplate.opsForValue().get("十分钟").toString());
+		Img img = VerifyCode.getImgCode(120, 41, 4, "1234567890");
+		
+		
+		new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).put("identifyingcode:login:"+session.getId(), img.verifyCode, 120);
+		
+    	
+        return img.base64String;
     }
     
     

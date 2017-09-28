@@ -29,7 +29,7 @@ public class LoginInterceptor implements HandlerInterceptor
      */
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object obj, Exception exc) throws Exception
     {
-        request.getCookies();
+        //request.getCookies();
         logger.error("afterCompletion-----权限拦截-------拦截器获取:" + request.getSession().getId());
     }
 

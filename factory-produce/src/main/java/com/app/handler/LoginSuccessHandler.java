@@ -14,9 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 
+import com.app.dao.sys.SysLogRepository;
 import com.app.entity.sys.SysLogEntity;
 import com.app.entity.sys.SysUserEntity;
-import com.app.service.sys.SysLogRepository;
 import com.app.util.PublicMethod;
 
 /**
