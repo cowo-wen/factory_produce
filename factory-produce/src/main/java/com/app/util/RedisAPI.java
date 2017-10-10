@@ -1420,14 +1420,14 @@ public class RedisAPI
         }
 
     }
-
+    /*
     public static void main(String[] args) throws Exception
     {
 
         // RedisAPI.put("monitor:show_log", "true", "10.10.0.18", 6385);
         // RedisAPI.put("monitor:show_log:show_school_channel", "true", "192.168.1.26",6385);
         // System.out.println("".equals(RedisAPI.get("monitor:show_log:show_school_channel2", "192.168.1.26", 6385)));
-/*
+
         RedisBean bean = new RedisBean();
         bean.setJedisIp("127.0.0.1");
         bean.setJedisPort(6379);
@@ -1440,10 +1440,10 @@ public class RedisAPI
         
         String s = api.lRangeFirst("key");
             System.out.println(s);
-        */
+        
         String [] r = new String[]{"4","66","22"};
         System.out.println(r);
         //testSort3();
 
-    }
+    }*/
 }

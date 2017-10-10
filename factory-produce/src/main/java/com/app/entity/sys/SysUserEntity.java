@@ -46,6 +46,15 @@ public class SysUserEntity extends CacheVo  implements Serializable
     private String password;
     
     @Column
+    private String mobile;
+    
+    @Column
+    private String number;
+    
+    @Column
+    private String idcard;
+    
+    @Column
     private String loginName;
     
     @Column
@@ -130,6 +139,30 @@ public class SysUserEntity extends CacheVo  implements Serializable
 
 	public void setOperatorTime(Date operatorTime) {
 		this.operatorTime = operatorTime;
+	}
+
+	public String getMobile() {
+		return mobile;
+	}
+
+	public void setMobile(String mobile) {
+		this.mobile = mobile;
+	}
+
+	public String getNumber() {
+		return number;
+	}
+
+	public void setNumber(String number) {
+		this.number = number;
+	}
+
+	public String getIdcard() {
+		return idcard;
+	}
+
+	public void setIdcard(String idcard) {
+		this.idcard = idcard;
 	}
 
     
