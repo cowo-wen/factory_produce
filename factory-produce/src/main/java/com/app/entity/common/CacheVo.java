@@ -380,14 +380,16 @@ public class CacheVo {
 	}
 	
 	private CacheVo setIDValue(String value){
-		Field f = getIdName();
-		logger.error(value+"-KKKKKKKKKKKKKKKKKKKKK-"+f.getName());
-		if(f.getType().getName().equals(Long.class.getName())){
-			setFieldValue(f,Long.parseLong(value));
-		}else if(f.getType().getName().equals(Integer.class.getName())){
-			setFieldValue(f,Integer.parseInt(value));
-		}else{
-			setFieldValue(f,value);
+		if(!PublicMethod.isEmptyStr(value)){
+			Field f = getIdName();
+			logger.error(value+"-KKKKKKKKKKKKKKKKKKKKK-"+f.getName());
+			if(f.getType().getName().equals(Long.class.getName())){
+				setFieldValue(f,Long.parseLong(value));
+			}else if(f.getType().getName().equals(Integer.class.getName())){
+				setFieldValue(f,Integer.parseInt(value));
+			}else{
+				setFieldValue(f,value);
+			}
 		}
 		
 		return this;
@@ -445,6 +447,7 @@ public class CacheVo {
 					int size = list.size();
 					String[] fieldValues = new String[size];
 					String[] values = new String[size];
+					getIdName();
 					String idORM = getClassInfo(this.getClass(), FIXED_DEFINITION_ID_ORM)+"";
 					for(int i = 0;i<size;i++){
 						Map<String,Object> map3 = list.get(i);
