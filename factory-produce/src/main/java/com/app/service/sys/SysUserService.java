@@ -9,7 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.app.dao.sys.SysUserRepository;
 import com.app.entity.sys.SysUserEntity;
@@ -25,6 +30,12 @@ public class SysUserService
     @Autowired
     private SysUserRepository sysUserRepository;
     
+    /**
+     * 新增
+     * @param user
+     * @throws Exception
+     */
+    @Transactional
     public void save(SysUserEntity user) throws Exception{
     	
     	Map<String,Object> map = new HashMap<String,Object>();
@@ -38,5 +49,50 @@ public class SysUserService
 		}else{
 			throw new Exception("已存在相同的登录帐号");
 		}
+    }
+    
+    
+    /**
+     * 修改
+     * @param user
+     * @throws Exception
+     */
+    @Transactional
+    public void update(SysUserEntity user) throws Exception{
+    	Map<String,Object> map = new HashMap<String,Object>();
+        map.put("field_1", "login_name");
+        map.put("value_1", user.getLoginName());
+		List<?> list = user.getCustomCache(map, "user_id");
+		int size = list.size();
+		if(size == 0 || (size == 1 && ((SysUserEntity)list.get(0)).getUserId() == user.getUserId())){
+			user.deleteNoSql();
+			sysUserRepository.save(user);
+		}else{
+			throw new Exception("已存在相同的登录帐号,不能修改");
+		}
+    }
+    
+    /**
+     * 删除
+     * @param user
+     * @throws Exception
+     */
+    @Transactional
+    public void delete(SysUserEntity user) throws Exception{
+    	user.deleteNoSql();
+		sysUserRepository.delete(user);
+    }
+    
+    
+    /**
+     * 查询
+     * @param user
+     * @throws Exception
+     */
+    public void queryPage(Integer page, Integer size) throws Exception{
+    	 Pageable pageable = new PageRequest(page, size, Sort.Direction.ASC, "user_id");
+    	 Page<SysUserEntity> list= sysUserRepository.findAll(pageable);
+    	 
+    	 
     }
 }

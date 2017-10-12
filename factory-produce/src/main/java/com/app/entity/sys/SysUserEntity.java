@@ -38,6 +38,9 @@ public class SysUserEntity extends CacheVo  implements Serializable
     
     @Column
     private Integer type;
+    
+    @Column
+    private Integer valid;
 
     @Column
     private String userName;
@@ -82,6 +85,11 @@ public class SysUserEntity extends CacheVo  implements Serializable
         this.password = user.getPassword();
         this.loginName = user.getLoginName();
         this.userId = user.getUserId();
+        this.valid = user.getValid();
+        this.mobile = user.getMobile();
+        this.idcard = user.getIdcard();
+        this.number = user.getNumber();
+        this.type = user.type;
     }
 
 	
@@ -163,6 +171,14 @@ public class SysUserEntity extends CacheVo  implements Serializable
 
 	public void setIdcard(String idcard) {
 		this.idcard = idcard;
+	}
+
+	public Integer getValid() {
+		return valid;
+	}
+
+	public void setValid(Integer valid) {
+		this.valid = valid;
 	}
 
     

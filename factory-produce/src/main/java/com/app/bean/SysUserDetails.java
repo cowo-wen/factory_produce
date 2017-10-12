@@ -33,14 +33,18 @@ public class SysUserDetails extends SysUserEntity implements UserDetails{
     }
 
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if(roles == null || roles.size() <1){
+        if(roles == null || roles.size() == 0){
             return AuthorityUtils.commaSeparatedStringToAuthorityList("");
         }
         StringBuilder commaBuilder = new StringBuilder();
         for(SysUserRoleEntity role : roles){
             commaBuilder.append(role.getRoleId()).append(",");
         }
-        String authorities = commaBuilder.substring(0,commaBuilder.length()-1);
+        String authorities = "";
+        if(commaBuilder.length() > 0){
+        	authorities = commaBuilder.substring(0,commaBuilder.length()-1);
+        }
+         
         return AuthorityUtils.commaSeparatedStringToAuthorityList(authorities);
     }
 

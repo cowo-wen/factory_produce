@@ -6,6 +6,9 @@ package com.app.entity.sys;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -31,6 +34,26 @@ public class SysAccountEntity extends CacheVo  implements Serializable
 	 * 
 	 */
 	private static final long serialVersionUID = 6371079352659004339L;
+	
+	
+	/**
+	 * 类型身份证
+	 */
+	
+	public static final int TYPE_IDCARD = 1;
+	
+	/**
+	 * 类型手机号码
+	 */
+	
+	public static final int TYPE_MOBLIE = 2;
+	
+	/**
+	 * 类型邮箱
+	 */
+	
+	public static final int TYPE_EMAIL = 3;
+	
 
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -113,7 +136,52 @@ public class SysAccountEntity extends CacheVo  implements Serializable
 		this.operatorTime = operatorTime;
 	}
 
+	
+	/**
+	 * 获取其他的登录帐号信息
+	 * @param type
+	 * @param account
+	 * @return
+	 */
+	public List<?> getCustomCache(int type,String account){
+		Map<String,Object> accountMap = new HashMap<String,Object>();
+		accountMap.put("field_1", "type");
+		accountMap.put("value_1", type);
+		accountMap.put("field_2", "other_account");
+		accountMap.put("value_2", account);
+    	return getCustomCache(accountMap, "user_id");
+	}
+	
+	/**
+	 * 获取其他的登录帐号信息
+	 * @param type
+	 * @param account
+	 * @return
+	 */
+	public List<?> getCustomCache(String account){
+		for(int i = 1;i<=3;i++){
+			List<?> list = getCustomCache(i, account);
+			if(list != null && list.size() > 0){
+				return list;
+			}
+		}
+		
+		return null;
+	} 
     
-    
+	/**
+	 * 获取其他的登录帐号信息
+	 * @param type
+	 * @param account
+	 * @return
+	 */
+	public void saveCustomCache(int type,String account,String userId){
+		Map<String,Object> accountMap = new HashMap<String,Object>();
+		accountMap.put("field_1", "type");
+		accountMap.put("value_1", type);
+		accountMap.put("field_2", "other_account");
+		accountMap.put("value_2", account);
+		saveCustomCache(accountMap,"user_id",userId,userId);
+	}
     
 }

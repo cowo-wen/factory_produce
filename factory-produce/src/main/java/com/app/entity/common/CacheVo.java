@@ -21,6 +21,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
 import com.app.dao.JdbcDao;
+import com.app.dao.sql.SQLWhere;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
 import com.google.gson.Gson;
@@ -144,6 +145,62 @@ public class CacheVo {
 		return tableName;
 	}
 	
+	
+	
+	public List<CacheVo> getListVO(int page ,int row,SQLWhere where){
+		row = row > 10000 || row <= 0 ? 10000:row;
+		long count = page== 0 ? 0:(page-1)*row;
+		StringBuilder sql = new StringBuilder("select * from ").append( getTableName().toString()).append(where.toString()).append("limit ").append(count).append(",").append(row);
+		logger.error(sql.toString());
+		return mapperVO(getJdbcDao().getList(sql.toString()));
+	}
+	
+	/**
+	 * 查询 统计
+	 * @param where
+	 * @return
+	 */
+	public long getCount(SQLWhere where){
+		Object tableName = getClassInfo(this.getClass(), FIXED_DEFINITION_TABLE);
+		StringBuilder sql = new StringBuilder("select count(*) num from ").append(tableName.toString()).append(where.toString());
+		List<Map<String, Object>>  list = getJdbcDao().getList(sql.toString());
+		if(list != null && list.size() > 0){
+			//Map<String, Object> map = list.get(0);
+			return Long.parseLong(list.get(0).get("num").toString());
+		}
+		return 0;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<CacheVo> mapperVO(List<Map<String,Object>> listMap){
+		List<CacheVo> listVO = new ArrayList<CacheVo>();
+		if(listMap != null && listMap.size() > 0){
+			List<Field>  list = getCacheColumn();
+			Map<String,String> columnORM = (Map<String,String>)getClassInfo(this.getClass(), FIXED_DEFINITION_COLUMN_ORM);
+			for(Map<String,Object> mapVo : listMap){
+				if(mapVo != null && mapVo.size() > 0){
+					try {
+						CacheVo vo = this.getClass().getConstructor(String.class).newInstance(redisAPIName);
+						for (Field field : list) {
+							if(mapVo.containsKey(columnORM.get(field.getName()))){
+								vo.setFieldValue(field,mapVo.get(columnORM.get(field.getName())));
+							}
+						}
+						listVO.add(vo);
+					} catch (Exception e) {
+						e.printStackTrace();
+						logger.error("转换对象失败="+this.getClass(), e);
+					}
+		        }
+			}
+		}
+		return listVO;
+	}
+	
+	
+	
+	
+	
 	public CacheVo getVo(){
 		Object tableName = getTableName();
 		try{
@@ -160,12 +217,14 @@ public class CacheVo {
 							setFieldValue(field,mapVo.get(columnORM.get(field.getName())));
 							//this.getClass().getMethod(parSetName(field.getName())).invoke(this, new Object[]{field.getClass(),mapVo.get(columnName)});
 						}
-						
 					}
 				}
+				return this;
+	        }else{
+	        	return null;
 	        }
 	        
-	        return this;
+	        
 		}catch(Exception e){
 			logger.error("查找对象失败", e);
 			return null;
@@ -179,14 +238,24 @@ public class CacheVo {
 		}
 	}
 	
+	
+	/**
+	 * 加载单个实体对象，没有则返回null
+	 * @return
+	 */
 	public CacheVo loadVo(){
 		
 		if (!PublicMethod.isEmptyStr(redisAPIName)) {
 			String result = new RedisAPI(redisAPIName).get(getCacheIDKey());
 			if(PublicMethod.isEmptyStr(result)){
 				CacheVo vo = getVo();
-				vo.insertInNosql();//插入缓存
-				return vo;
+				if(vo != null){
+					vo.insertInNosql();//插入缓存
+					return vo;
+				}else{
+					return null;
+				}
+				
 			}else{
 				return new Gson().fromJson(result, this.getClass());
 			}
@@ -382,7 +451,6 @@ public class CacheVo {
 	private CacheVo setIDValue(String value){
 		if(!PublicMethod.isEmptyStr(value)){
 			Field f = getIdName();
-			logger.error(value+"-KKKKKKKKKKKKKKKKKKKKK-"+f.getName());
 			if(f.getType().getName().equals(Long.class.getName())){
 				setFieldValue(f,Long.parseLong(value));
 			}else if(f.getType().getName().equals(Integer.class.getName())){
@@ -427,12 +495,32 @@ public class CacheVo {
 	}
 	
 	
+	/**
+	 * 
+	 * @param map 自定义key
+	 * @param fieldName 字段名称 (user_id)
+	 * @param fieldValue 字段的值(118)
+	 * @param value 该vo的id
+	 */
 	public void saveCustomCache(Map<String,Object> map,String fieldName,String fieldValue,String value){
 		if (!PublicMethod.isEmptyStr(redisAPIName)) {
 			getCustomCacheMap(map, fieldName);
 			new RedisAPI(redisAPIName).hSet(customCacheKey(map), new String[]{fieldValue}, new String[]{value});
 		}
 	}
+	
+	/**
+	 * 删除自定义缓存
+	 * @param map 自定义key
+	 * @param fieldValue 字段的值
+	 */
+	public void delCustomCache(Map<String,Object> map,String fieldValue){
+		if (!PublicMethod.isEmptyStr(redisAPIName)) {
+			new RedisAPI(redisAPIName).hDel(customCacheKey(map), fieldValue);
+		}
+	}
+	
+	
 	
 	private Map<String,String> getCustomCacheMap(Map<String,Object> map,String fieldName){
 		if (!PublicMethod.isEmptyStr(redisAPIName)) {
@@ -461,7 +549,6 @@ public class CacheVo {
 					}
 					new RedisAPI(redisAPIName).hSet(key,fieldValues, values);
 					new RedisAPI(redisAPIName).expire(key, 60*60*24*50);
-					
 				}
 			}
 			return map2;
@@ -479,7 +566,12 @@ public class CacheVo {
 					try {
 						CacheVo vo = this.getClass().getConstructor(String.class).newInstance(redisAPIName);
 						vo = vo.setIDValue(kv.getValue()).loadVo();
-						list.add(vo);
+						if(vo != null ){//如果存在，则返回
+							list.add(vo);
+						}else{
+							delCustomCache(map,kv.getKey());//不存在则删除
+						}
+						
 					} catch (Exception e) {
 						logger.error(kv.getKey()+"转换对象失败="+kv.getValue(), e);
 					}

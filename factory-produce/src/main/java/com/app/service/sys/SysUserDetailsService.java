@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.app.bean.SysUserDetails;
+import com.app.entity.sys.SysAccountEntity;
 import com.app.entity.sys.SysUserEntity;
 import com.app.entity.sys.SysUserRoleEntity;
 import com.app.util.RedisAPI;
@@ -36,11 +37,18 @@ public class SysUserDetailsService implements UserDetailsService
         try
         {
         	Map<String,Object> map = new HashMap<String,Object>();
+        	userName = userName.trim().replaceAll("--", "").replaceAll("(?i) or ", "");
             map.put("field_1", "login_name");
             map.put("value_1", userName);
         	List<?> list = user.getCustomCache(map, "user_id");
         	if(list.size() == 0){
-        		return null;
+        		SysAccountEntity account = new SysAccountEntity(RedisAPI.REDIS_CORE_DATABASE);
+            	List<?> accountList = account.getCustomCache(userName);
+            	if(accountList.size() == 0){
+            		return null;
+            	}else{
+            		user = (SysUserEntity) accountList.get(0);
+            	}
         	}else{
         		user = (SysUserEntity) list.get(0);
         	}

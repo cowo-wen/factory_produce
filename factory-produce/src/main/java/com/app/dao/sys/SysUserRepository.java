@@ -4,11 +4,11 @@
  */
 package com.app.dao.sys;
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.app.entity.sys.SysUserEntity;
 @Transactional
-public interface  SysUserRepository extends CrudRepository<SysUserEntity, Integer>{
+public interface  SysUserRepository extends PagingAndSortingRepository<SysUserEntity, Integer>{
 
 }

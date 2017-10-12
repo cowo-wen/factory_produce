@@ -70,7 +70,6 @@ public class OAuthenticationProvider implements AuthenticationProvider {
         }
         
         SysUserDetails user = (SysUserDetails) userService.loadUserByUsername(username);
-        logger.equals(user+"------------==========="+username);
         if(user == null || user.getUserId() == null || user.getUserId() == 0){
             throw new LoginAccountStatusException("不存在的用户名");
         }
@@ -79,8 +78,15 @@ public class OAuthenticationProvider implements AuthenticationProvider {
         if (!MD5.encode(password).equals(user.getPassword())) {
             throw new LoginAccountStatusException("密码不正确");
         }
+        if(user.getValid() == null || user.getValid() != 1){
+        	throw new LoginAccountStatusException("用户已被锁，请联系管理员");
+        }
+        
 
         Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
+        if(user.getType() != 1 && (authorities == null || authorities.size() == 0)){
+        	throw new LoginAccountStatusException("用户未分配角色权限，不能登录");
+        }
         return new UsernamePasswordAuthenticationToken(user, password, authorities);
     }
 

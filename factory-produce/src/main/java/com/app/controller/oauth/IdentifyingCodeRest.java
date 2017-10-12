@@ -1,4 +1,4 @@
-package com.app.controller.common;
+package com.app.controller.oauth;
 
 import javax.servlet.http.HttpSession;
 
