@@ -61,15 +61,26 @@ public class SQLWhere {
 
 	@Override
 	public String toString() {
-		StringBuilder s = new StringBuilder();
-		s.append(" where (").append(sb.toString()).append(")");
-		if(listOR.size() > 0){
-			for(SQLWhere sql : listOR){
-				s.append(" or ").append(sql.toString());
+		StringBuilder s = new StringBuilder(" ");
+		if(sb.length() > 0){
+			s.append(" where (").append(sb.toString()).append(") ");
+			if(listOR.size() > 0){
+				for(SQLWhere sql : listOR){
+					s.append(sql.toString().replaceAll(" where ", " OR "));
+				}
+			}
+		}else{
+			if(listOR.size() > 0){
+				s.append(listOR.get(0).toString());
+				for(int i = 1,len = listOR.size();i<len;i++){
+					s.append(listOR.get(i).toString().replaceAll(" where ", " OR "));
+				}
 			}
 		}
+		
+		
 		if(sortSB.length() > 0){
-			s.append(" order by ").append(sortSB.toString());
+			s.append(" order by ").append(sortSB.toString()).append(" ");
 		}
 		return s.toString();
 	}

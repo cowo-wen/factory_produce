@@ -20,7 +20,7 @@ public class DescSort extends Sort
   	@Override
 	public String toString() {
 	  String value = new Gson().toJson(name);
-		return value.substring(1, value.length()-1) + Sort.DESC;
+		return value.substring(1, value.length()-1).replaceAll("\"", "") + Sort.DESC;
 	}
 
 

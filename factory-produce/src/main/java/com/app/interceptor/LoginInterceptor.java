@@ -30,7 +30,7 @@ public class LoginInterceptor implements HandlerInterceptor
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object obj, Exception exc) throws Exception
     {
         //request.getCookies();
-        logger.error("afterCompletion-----权限拦截-------拦截器获取:" + request.getSession().getId());
+        //logger.error("afterCompletion-----权限拦截-------拦截器获取:" + request.getSession().getId());
     }
 
     /**
@@ -38,7 +38,7 @@ public class LoginInterceptor implements HandlerInterceptor
      */
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object obj, ModelAndView mav) throws Exception
     {
-        logger.error("postHandle------权限拦截------拦截器获取:" + request.getSession().getId());
+        //logger.error("postHandle------权限拦截------拦截器获取:" + request.getSession().getId());
 
     }
 
@@ -47,7 +47,7 @@ public class LoginInterceptor implements HandlerInterceptor
      */
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object obj) throws Exception
     {
-        logger.error("preHandle-----权限拦截-------拦截器获取:" + request.getSession().getId());
+        //logger.error("preHandle-----权限拦截-------拦截器获取:" + request.getSession().getId());
         logger.error("-------------登录ip"+NetworkUtil.getIpAddress2(request));
         return true;
     }

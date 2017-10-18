@@ -16,6 +16,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import com.app.interceptor.LoginInterceptor;
+import com.app.interceptor.PermissionInterceptor;
 
 
 @Configuration
@@ -31,7 +32,8 @@ public class WebConfiguration extends WebMvcConfigurerAdapter
         // excludePathPatterns 用户排除拦截
         //registry.addInterceptor(new LoginInterceptor()).addPathPatterns("/**");
         //registry.addInterceptor(new MyInterceptor2()).addPathPatterns("/**");
-        registry.addInterceptor(new LoginInterceptor()).addPathPatterns("/v1/**", "/security2/**");
+        registry.addInterceptor(new LoginInterceptor()).addPathPatterns("/v1/**");
+        registry.addInterceptor(new PermissionInterceptor()).addPathPatterns("/v1/permission/**", "/permission/**");
         //.excludePathPatterns("/allow1/**", "/allow2/**");
         
         super.addInterceptors(registry);

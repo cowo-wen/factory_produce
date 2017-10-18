@@ -28,19 +28,25 @@ public class IdentifyingCodeRest {
     @Autowired  
     private HttpSession session;
     
-   
     
     @RequestMapping(method=RequestMethod.GET,value="/base64")
     public String base64(Model model) throws Exception{
     	
 		Img img = VerifyCode.getImgCode(120, 41, 4, "1234567890");
 		
-		
-		new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).put("identifyingcode:login:"+session.getId(), img.verifyCode, 120);
+		try{
+			new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).put("identifyingcode:login:"+session.getId(), img.verifyCode, 120);
+			return img.base64String;
+		}catch(Exception e){
+			logger.error("验证码获取异常", e);
+			throw new Exception("验证码获取异常");
+		}
 		
     	
-        return img.base64String;
+        
     }
     
+ 
     
+   
 }

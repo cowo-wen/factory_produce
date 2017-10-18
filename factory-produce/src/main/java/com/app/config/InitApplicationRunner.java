@@ -43,6 +43,7 @@ public class InitApplicationRunner implements ApplicationRunner {
         		user.setType(1);
         		user.setUserName("超级管理员");
         		user.setPassword(MD5.encode("123456"));
+        		user.setValid(1);
         		try{
         			sysUserService.save(user);
         		}catch(Exception e){

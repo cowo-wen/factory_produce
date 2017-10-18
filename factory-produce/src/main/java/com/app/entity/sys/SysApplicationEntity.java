@@ -37,35 +37,70 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 	private static final long serialVersionUID = 473367927408629970L;
 
 
+	/**
+	 * 主键
+	 */
 	@Id
 	@Column
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long applicationId;
 
 	
+	/**
+	 * 父节点
+	 */
 	@Column
     private Long parentId;
 
-	
+	/**
+	 * 终端类型 1表示pc端，2表示微信端
+	 */
 	@Column
-    private Integer type;
+    private Integer terminalType;
+	
+	/**
+	 * 应用类型，1表示菜单,2表示导航方法，3表示按钮，4表示其他
+	 */
+	@Column
+    private Integer appType;
+	
+	/**
+	 * 事件类型，1表示url,2表示js方法，3表示html
+	 */
+	@Column
+    private Integer eventType;
+	
+	/**
+	 * 是否有效
+	 */
+	@Column
+    private Integer valid;
     
+	/**
+	 * 应用名称
+	 */
 	@Column
     private String name;
     
 	
+	/**
+	 * 应用代码
+	 */
 	@Column
-    private String code;
+    private String applicationCode;
     
 	
+	/**
+	 * 备注
+	 */
 	@Column
     private String remark;
     
 	/**
-	 * 用户
+	 * 输出代码
 	 */
 	@Column
-    private String url;
+    private String outCode;
     
 	@Column
     private Date createTime;
@@ -75,13 +110,7 @@ public class SysApplicationEntity extends CacheVo implements Serializable
     
     
 
-    public int getType() {
-		return type;
-	}
-
-	public void setType(int type) {
-		this.type = type;
-	}
+    
 
 	public SysApplicationEntity()
     {
@@ -122,15 +151,15 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 		this.name = name;
 	}
 
-	public String getCode() {
-		return code;
-	}
-
-	public void setCode(String code) {
-		this.code = code;
-	}
-
 	
+
+	public String getApplicationCode() {
+		return applicationCode;
+	}
+
+	public void setApplicationCode(String applicationCode) {
+		this.applicationCode = applicationCode;
+	}
 
 	public String getRemark() {
 		return remark;
@@ -140,17 +169,7 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 		this.remark = remark;
 	}
 
-	public String getUrl() {
-		return url;
-	}
-
-	public void setUrl(String url) {
-		this.url = url;
-	}
-
-	public void setType(Integer type) {
-		this.type = type;
-	}
+	
 
 	public Date getCreateTime() {
 		return createTime;
@@ -166,6 +185,46 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 
 	public void setOperatorTime(Date operatorTime) {
 		this.operatorTime = operatorTime;
+	}
+
+	public Integer getTerminalType() {
+		return terminalType;
+	}
+
+	public void setTerminalType(Integer terminalType) {
+		this.terminalType = terminalType;
+	}
+
+	public Integer getAppType() {
+		return appType;
+	}
+
+	public void setAppType(Integer appType) {
+		this.appType = appType;
+	}
+
+	public Integer getEventType() {
+		return eventType;
+	}
+
+	public void setEventType(Integer eventType) {
+		this.eventType = eventType;
+	}
+
+	public String getOutCode() {
+		return outCode;
+	}
+
+	public void setOutCode(String outCode) {
+		this.outCode = outCode;
+	}
+
+	public Integer getValid() {
+		return valid;
+	}
+
+	public void setValid(Integer valid) {
+		this.valid = valid;
 	}
 
    

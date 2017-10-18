@@ -27,6 +27,7 @@ public class JdbcDao {
 		}else{
 			sql = "select * from " + table + " where " + id + "='"+ value.toString()+"'";
 		}
+		logger.error(sql);
 		Map<String, Object> mapVo = jdbcTemplate.queryForMap(sql);
 		return mapVo;
 	}

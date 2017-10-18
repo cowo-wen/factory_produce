@@ -149,7 +149,7 @@ public class CacheVo {
 	
 	public List<CacheVo> getListVO(int page ,int row,SQLWhere where){
 		row = row > 10000 || row <= 0 ? 10000:row;
-		long count = page== 0 ? 0:(page-1)*row;
+		long count = page;//== 0 ? 0:(page-1)*row;
 		StringBuilder sql = new StringBuilder("select * from ").append( getTableName().toString()).append(where.toString()).append("limit ").append(count).append(",").append(row);
 		logger.error(sql.toString());
 		return mapperVO(getJdbcDao().getList(sql.toString()));
