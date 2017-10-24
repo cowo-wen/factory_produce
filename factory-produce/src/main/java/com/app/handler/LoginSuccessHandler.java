@@ -10,11 +10,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 
-import com.app.dao.sys.SysLogRepository;
 import com.app.entity.sys.SysLogEntity;
 import com.app.entity.sys.SysUserEntity;
 import com.app.util.PublicMethod;
@@ -27,8 +25,6 @@ import com.app.util.PublicMethod;
 public class LoginSuccessHandler extends  SavedRequestAwareAuthenticationSuccessHandler { 
 	
 	
-	@Autowired
-    private SysLogRepository sysLogRepository;
 	
     @Override    
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {    
@@ -40,8 +36,12 @@ public class LoginSuccessHandler extends  SavedRequestAwareAuthenticationSuccess
         sysLogEntity.setIp(getIpAddress(request));
         sysLogEntity.setType(SysLogEntity.TYPE_SUCCESS);
         sysLogEntity.setMessage(userDetails.getUserName()+"于"+PublicMethod.formatDateStr("yyyy-MM-dd HH:mm:ss") + " 登录成功");
-        
-        sysLogRepository.save(sysLogEntity);
+        try {
+			sysLogEntity.insert();
+		} catch (Exception e) {
+			logger.error("保存日志出错", e);
+		}
+        //sysLogRepository.save(sysLogEntity);
                 
         super.onAuthenticationSuccess(request, response, authentication);    
     }    

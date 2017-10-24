@@ -17,7 +17,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 
 import com.app.config.SysConfigProperties;
-import com.app.dao.sys.SysLogRepository;
 import com.app.entity.sys.SysLogEntity;
 import com.app.util.RedisAPI;
 
@@ -29,8 +28,7 @@ import com.app.util.RedisAPI;
 public class LoginFailHandler implements  AuthenticationFailureHandler { 
 	
 	public static Log logger = LogFactory.getLog(LoginFailHandler.class);
-	@Autowired
-    private SysLogRepository sysLogRepository;
+	
 	
 	@Autowired
     private SysConfigProperties sysConfig;
@@ -66,7 +64,12 @@ public class LoginFailHandler implements  AuthenticationFailureHandler {
 	        //System.out.println(exception.getLocalizedMessage());
 	        //exception.printStackTrace();
 	        sysLogEntity.setMessage(request.getParameter("username")+exception.getMessage());
-	        sysLogRepository.save(sysLogEntity);
+	        try {
+				sysLogEntity.insert();
+			} catch (Exception e) {
+				logger.error("保存日志出错", e);
+				e.printStackTrace();
+			}
 	        //sysLogEntity.setLogId(3L);
 	        //sysLogEntity.loadVo();
 	        

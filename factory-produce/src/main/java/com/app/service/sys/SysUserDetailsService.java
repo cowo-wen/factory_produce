@@ -5,9 +5,7 @@
 package com.app.service.sys;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,11 +34,13 @@ public class SysUserDetailsService implements UserDetailsService
         SysUserEntity user = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
         try
         {
-        	Map<String,Object> map = new HashMap<String,Object>();
+        	//Map<String,Object> map = new HashMap<String,Object>();
         	userName = userName.trim().replaceAll("--", "").replaceAll("(?i) or ", "");
-            map.put("field_1", "login_name");
-            map.put("value_1", userName);
-        	List<?> list = user.getCustomCache(map, "user_id");
+            //map.put("field_1", "login_name");
+            //map.put("value_1", userName);
+        	//List<?> list = user.getCustomCache(map, "user_id");
+        	user.setLoginName(userName);
+        	List<?> list =user.queryCustomCacheValue(0, null);
         	if(list.size() == 0){
         		SysAccountEntity account = new SysAccountEntity(RedisAPI.REDIS_CORE_DATABASE);
             	List<?> accountList = account.getCustomCache(userName);

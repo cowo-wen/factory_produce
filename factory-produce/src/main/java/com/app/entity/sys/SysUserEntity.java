@@ -15,6 +15,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.app.entity.common.CacheVo;
+import com.app.entity.common.CustomCache;
+import com.app.entity.common.TableCache;
 
 /**
  * 功能说明：系统用户表
@@ -23,6 +25,7 @@ import com.app.entity.common.CacheVo;
  */
 @Entity
 @Table(name = "t_sys_user")
+@TableCache(isCache=true)
 public class SysUserEntity extends CacheVo  implements Serializable
 {
 
@@ -58,6 +61,7 @@ public class SysUserEntity extends CacheVo  implements Serializable
     private String idcard;
     
     @Column
+    @CustomCache(sort = 0)
     private String loginName;
     
     @Column

@@ -12,6 +12,11 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.app.entity.sys.SysUserEntity;
+import com.app.util.PublicMethod;
+import com.app.util.RedisAPI;
+import com.google.gson.JsonParser;
+
 /**
  * 功能说明：权限拦截
  * 
@@ -48,12 +53,28 @@ public class PermissionInterceptor implements HandlerInterceptor
     	logger.error(request.getSession().getId()+"------权限拦截-------url="+request.getRequestURI());
     	boolean bool = checkURL(request.getRequestURI(),request.getRequestURI());
         logger.error(request.getSession().getId()+"------权限拦截-------application_code="+request.getParameter("application_code"));
-        if(bool){
-        	return true;
+        
+        String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(request.getSession().getId());
+        if(PublicMethod.isEmptyStr(value)){
+        	request.setCharacterEncoding("UTF-8");
+            response.setContentType("text/html;charset=utf-8");
+            response.getWriter().print("非法请求");  
+        }else{
+        	SysUserEntity user = new SysUserEntity();
+        	user.parse(new JsonParser().parse(value).getAsJsonObject());
+        	if(user.getLoginName().equals("admin")){
+        		logger.error("==============超级用户不用判断权限==============");
+        		return true;
+        	}else if(bool){
+            	return true;
+            }else{
+            	request.setCharacterEncoding("UTF-8");
+                response.setContentType("text/html;charset=utf-8");
+                response.getWriter().print("没有权限操作");
+            }
         }
-        request.setCharacterEncoding("UTF-8");
-        response.setContentType("text/html;charset=utf-8");
-        response.getWriter().print("没有权限");  
+        
+        
         return false;
     }
     

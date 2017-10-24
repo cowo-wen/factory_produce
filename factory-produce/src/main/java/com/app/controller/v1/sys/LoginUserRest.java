@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.app.bean.SysUserDetails;
+import com.app.entity.sys.SysUserEntity;
+import com.app.util.RedisAPI;
 import com.google.gson.JsonObject;
 
 /**
@@ -38,6 +40,11 @@ public class LoginUserRest {
     	
     	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
     	logger.error(userDetails.getUserId()+"----*************----"+userDetails.getUserName());
+    	SysUserEntity user = new SysUserEntity();
+    	user.setUserId(userDetails.getUserId());
+    	user.loadVo();
+    	new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).put(session.getId(), user.toString());
+    	
     	JsonObject jo = new JsonObject();
     	jo.addProperty("user_name", userDetails.getUserName());
     	jo.addProperty("number", userDetails.getNumber());

@@ -1,13 +1,11 @@
 package com.app.controller.v1.sys;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -16,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app.dao.sql.SQLWhere;
 import com.app.dao.sql.sort.DescSort;
-import com.app.dao.sys.SysLogRepository;
 import com.app.entity.common.CacheVo;
 import com.app.entity.sys.SysLogEntity;
 import com.google.gson.GsonBuilder;
@@ -37,8 +34,6 @@ public class LogInfoRest {
     
   
     
-    @Autowired
-    private SysLogRepository sysLogRepository;
    
     
     @RequestMapping(method=RequestMethod.GET,value="/list")
@@ -80,7 +75,7 @@ public class LogInfoRest {
     public String delete(@PathVariable("id") Long id) throws Exception{
     	SysLogEntity log = new SysLogEntity();
     	log.setLogId(id);
-    	sysLogRepository.delete(log);
+    	log.delete();
         return "删除成功";
     }
     
@@ -94,13 +89,11 @@ public class LogInfoRest {
     @RequestMapping(method=RequestMethod.DELETE,value="/deleteBatch/{ids}")
     public String deleteBatch(@PathVariable(name="ids",required=true) String ids) throws Exception{
     	String [] logIds = ids.split(",");
-    	List<SysLogEntity> list = new ArrayList<SysLogEntity>();
     	for(String id : logIds){
     		SysLogEntity log = new SysLogEntity();
     		log.setLogId(Long.parseLong(id));
-    		list.add(log);
+    		log.delete();
     	}
-    	sysLogRepository.delete(list);
         return "批量删除成功";
     }
     

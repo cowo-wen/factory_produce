@@ -37,6 +37,11 @@ public class JdbcDao {
 		List<Map<String, Object>> list = jdbcTemplate.queryForList(sql);
 		return list;
 	}
+	
+	@Transactional 
+	public int update(String sql, Object [] parem) {
+		return jdbcTemplate.update(sql,parem);
+	}
 
 	public JdbcTemplate getJdbcTemplate() {
 		return jdbcTemplate;

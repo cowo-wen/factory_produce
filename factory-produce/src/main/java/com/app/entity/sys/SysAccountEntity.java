@@ -149,7 +149,7 @@ public class SysAccountEntity extends CacheVo  implements Serializable
 		accountMap.put("value_1", type);
 		accountMap.put("field_2", "other_account");
 		accountMap.put("value_2", account);
-    	return getCustomCache(accountMap, "user_id");
+    	return null;// getCustomCache(accountMap, "user_id");
 	}
 	
 	/**
@@ -181,7 +181,7 @@ public class SysAccountEntity extends CacheVo  implements Serializable
 		accountMap.put("value_1", type);
 		accountMap.put("field_2", "other_account");
 		accountMap.put("value_2", account);
-		saveCustomCache(accountMap,"user_id",userId,userId);
+		//saveCustomCache(accountMap,"user_id",userId,userId);
 	}
     
 }

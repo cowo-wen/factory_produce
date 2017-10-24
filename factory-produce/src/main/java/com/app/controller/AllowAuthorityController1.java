@@ -1,22 +1,16 @@
 package com.app.controller;
 
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.bean.Msg;
 import com.app.bean.RequestLoginBean;
 import com.app.dao.UserMapper;
-import com.app.entity.sys.SysUserEntity;
 import com.app.service.StudentService;
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 /**
@@ -35,23 +29,6 @@ public class AllowAuthorityController1 {
     @Autowired
     UserMapper userMapper;
     
-    @RequestMapping(method=RequestMethod.GET,value="/home")
-    public String index(Model model) {
-        Msg msg = new Msg("允许访问1", "测试内容2", "额外信息，只对管理员显示");
-        model.addAttribute("msg", msg);
-        List<SysUserEntity> list = studentService.getList();
-        SysUserEntity user= userMapper.findUserByName("ssd");
-        logger.error("----------------"+user.getPassword());
-        return new Gson().toJson(list);
-    }
-    
-    @RequestMapping(method=RequestMethod.POST,value="/post")
-    public String post(Model model) {
-        Msg msg = new Msg("允许访问1", "测试内容2", "额外信息，只对管理员显示");
-        model.addAttribute("msg", msg);
-        
-        return "{'age':123,'name':'"+msg+"'}";
-    }
     
     /** 
      * 通过post请求去登陆 

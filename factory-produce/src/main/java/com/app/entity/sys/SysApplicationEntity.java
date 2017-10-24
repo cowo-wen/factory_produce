@@ -15,6 +15,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.app.entity.common.CacheVo;
+import com.app.entity.common.CustomCache;
+import com.app.entity.common.TableCache;
 
 /**
  * 功能说明：系统应用表
@@ -23,6 +25,7 @@ import com.app.entity.common.CacheVo;
  */
 @Entity
 @Table(name = "t_sys_application")
+@TableCache(isCache=true)
 public class SysApplicationEntity extends CacheVo implements Serializable
 {
 
@@ -87,6 +90,7 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 	 * 应用代码
 	 */
 	@Column
+	@CustomCache(sort = 0)
     private String applicationCode;
     
 	
@@ -95,6 +99,12 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 	 */
 	@Column
     private String remark;
+	
+	/**
+	 * 排序
+	 */
+	@Column
+    private Integer sortCode;
     
 	/**
 	 * 输出代码
@@ -225,6 +235,14 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 
 	public void setValid(Integer valid) {
 		this.valid = valid;
+	}
+
+	public Integer getSortCode() {
+		return sortCode;
+	}
+
+	public void setSortCode(Integer sortCode) {
+		this.sortCode = sortCode;
 	}
 
    
