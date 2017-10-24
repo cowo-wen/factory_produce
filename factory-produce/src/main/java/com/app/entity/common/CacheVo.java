@@ -112,10 +112,12 @@ public class CacheVo {
 	}
 	
 	
-	private CacheVo newCacheVo(){
-		CacheVo vo = null;
+	@SuppressWarnings("unchecked")
+	private <T extends CacheVo> T newCacheVo(){
+		T vo = null;
 		try {
-			vo = this.getClass().getConstructor(String.class).newInstance(redisObj);
+			
+			vo = (T) this.getClass().getConstructor(String.class).newInstance(redisObj);
 		} catch (Exception e) {
 			logger.error("反映创建对象失败="+this.getClass(), e);
 		} 
@@ -127,7 +129,7 @@ public class CacheVo {
 	 * @param field
 	 * @param object
 	 */
-	private synchronized void setFieldValue(Field field,Object object){
+	public synchronized void setFieldValue(Field field,Object object){
 		synchronized (field) {
 			try {
 				field.setAccessible(true);
@@ -343,7 +345,7 @@ public class CacheVo {
 	 * @param value
 	 * @return
 	 */
-	private CacheVo setPKValue(String value){
+	protected CacheVo setPKValue(String value){
 		if(!PublicMethod.isEmptyStr(value)){
 			Field f = getPKField();
 			if(f.getType().getName().equals(Long.class.getName())){
@@ -465,7 +467,7 @@ public class CacheVo {
     }
 	
 	
-	public List<CacheVo> getListVO(int page ,int row,SQLWhere where){
+	public <T extends CacheVo> List<T> getListVO(int page ,int row,SQLWhere where){
 		row = row > 10000 || row <= 0 ? 10000:row;
 		long count = page;//== 0 ? 0:(page-1)*row;
 		StringBuilder sql = new StringBuilder("select * from ").append( getTableName().toString()).append(where.toString()).append(" limit ").append(count).append(",").append(row);
@@ -572,7 +574,7 @@ public class CacheVo {
 	/**
 	 * 保存自定义缓存值 自定义key，id
 	 */
-	private void saveCustomCacheValue(){
+	protected void saveCustomCacheValue(){
 		if(isChache()){
 			Map<Integer,CustomCacheBean> customCacheMap = getCustomCacheMap();
 			if(customCacheMap != null ){
@@ -634,9 +636,12 @@ public class CacheVo {
 	public CacheVo parse(JsonObject jo){
 		//JsonObject jo = new JsonParser().parse(json).getAsJsonObject();
 		String idName = getPKField().getName();
-		if(jo.has(idName) && Format.isNumeric(jo.get(idName).getAsString())){
-			setPKValue(jo.get(idName).getAsString());
-			loadVo();
+		if(jo.has(idName)  ){
+			String idValue = jo.get(idName).getAsString();
+			if(!PublicMethod.isEmptyStr(idValue) && Format.isNumeric(idValue)){
+				setPKValue(jo.get(idName).getAsString());
+				loadVo();
+			}
 		}
 		setVo(jo);
 		return this;
@@ -649,16 +654,17 @@ public class CacheVo {
 	 * @param listMap
 	 * @return
 	 */
-	public List<CacheVo> mapperVO(List<Map<String,Object>> listMap){
-		List<CacheVo> listVO = new ArrayList<CacheVo>();
+	public <T extends CacheVo> List<T> mapperVO(List<Map<String,Object>> listMap){
+		List<T> listVO = new ArrayList<T>();
 		if(listMap != null && listMap.size() > 0){
 			List<Field>  list = getColumnField();
 			Map<String,String> columnORM = getCustomORM();
 			for(Map<String,Object> mapVo : listMap){
 				if(mapVo != null && mapVo.size() > 0){
 					try {
-						CacheVo vo = newCacheVo();
+						T vo = newCacheVo();
 						for (Field field : list) {
+							
 							if(mapVo.containsKey(columnORM.get(field.getName()))){
 								vo.setFieldValue(field,mapVo.get(columnORM.get(field.getName())));
 							}
@@ -744,8 +750,8 @@ public class CacheVo {
 	 * @param value 对应的hashset的key
 	 * @return
 	 */
-	public List<CacheVo> queryCustomCacheValue(int group,String value){
-		List<CacheVo> listVO = new ArrayList<CacheVo>();
+	public <T extends CacheVo> List<T> queryCustomCacheValue(int group,String value){
+		List<T> listVO = new ArrayList<T>();
 		Map<Integer,CustomCacheBean> customCacheMap = getCustomCacheMap();
 		if(customCacheMap.containsKey(group)){
 			if (!isChache()){//是否存在缓存
@@ -754,8 +760,8 @@ public class CacheVo {
 				Map<String,String> columnORM = getCustomORM();
 				for(Field field : bean.getField())
 					sqlWhere.and(new EQCnd(columnORM.get(field.getName()), getFieldValue(field)));
-				List<CacheVo> list = getListVO(0,10000,sqlWhere);
-				for(CacheVo vo : list){
+				List<T> list = getListVO(0,10000,sqlWhere);
+				for(T vo : list){
 					if(!PublicMethod.isEmptyStr(value)){
 						if(bean.getHashSetKey(vo).toString().equals(value)){
 							listVO.add(vo);
@@ -774,8 +780,8 @@ public class CacheVo {
 					Map<String,String> columnORM = getCustomORM();
 					for(Field field : bean.getField())
 						sqlWhere.and(new EQCnd(columnORM.get(field.getName()), getFieldValue(field)));
-					List<CacheVo> list = getListVO(0,10000,sqlWhere);
-					for(CacheVo vo : list){
+					List<T> list = getListVO(0,10000,sqlWhere);
+					for(T vo : list){
 						vo.saveCustomCacheValue();//保存自定义缓存值
 						if(!PublicMethod.isEmptyStr(value)){
 							if(bean.getHashSetKey(vo).toString().equals(value)){
@@ -790,7 +796,7 @@ public class CacheVo {
 					if(PublicMethod.isEmptyStr(value)){
 						for(Map.Entry<String, String> kv : mapValue.entrySet()){
 							try {
-								CacheVo vo = newCacheVo();
+								T vo = newCacheVo();
 								vo.setPKValue(kv.getValue());
 								vo.loadVo();
 								listVO.add(vo);
@@ -802,9 +808,10 @@ public class CacheVo {
 						return listVO;
 					}else{
 						if(mapValue.containsKey(value)){
-							this.setPKValue(mapValue.get(value));
-							this.loadVo();
-							listVO.add(this);
+							T vo = newCacheVo();
+							vo.setPKValue(mapValue.get(value));
+							vo.loadVo();
+							listVO.add( vo);
 							return listVO;
 						}
 					}
@@ -821,8 +828,8 @@ public class CacheVo {
 	 * @param value 对应的hashset的key
 	 * @return
 	 */
-	public CacheVo queryCustomCacheVo(int group,String value){
-		List<CacheVo> list = queryCustomCacheValue( group, value);
+	public <T extends CacheVo> T queryCustomCacheVo(int group,String value){
+		List<T> list = queryCustomCacheValue( group, value);
 		if(list != null && list.size() > 0){
 			return list.get(0);
 		}else{
@@ -844,7 +851,7 @@ public class CacheVo {
 	 * @param value 对应的hashset的key
 	 * @return
 	 */
-	public CacheVo queryCustomCacheVo(String value){
+	public <T extends CacheVo> T queryCustomCacheVo(String value){
 		return queryCustomCacheVo(0,value);
 		
 	}
@@ -853,11 +860,10 @@ public class CacheVo {
 	 * 查找自定义缓存数据
 	 * @return
 	 */
-	public CacheVo queryCustomCacheVo(){
+	public <T extends CacheVo> T queryCustomCacheVo(){
 		return queryCustomCacheVo(null);
 		
 	}
-	
 	
 	
 	
@@ -955,7 +961,7 @@ public class CacheVo {
 	 * 删除自定义缓存
 	 * @return
 	 */
-	public int insert() throws Exception{
+	public long insert() throws Exception{
 		JsonObject jo = new JsonParser().parse(toString()).getAsJsonObject();
 		CacheVo vo = newCacheVo();
 		vo.parse(jo);
@@ -984,12 +990,22 @@ public class CacheVo {
 				
 				if(bool){
 					columnSql.append(" , ").append(column);
-					signSql.append(" ,?");
+					if(column.equals("create_time") || column.equals("operator_time")){
+						signSql.append(" ,'").append(PublicMethod.formatDateStr(date, "yyyy-MM-dd HH:mm:ss")).append("'");
+					}else{
+						signSql.append(" ,").append(getColumnValue(field));
+					}
+					
 				}else{
 					bool = true;
 					columnSql.append(column);
-					signSql.append(" ?");
+					if(column.equals("create_time") || column.equals("operator_time")){
+						signSql.append("'").append(PublicMethod.formatDateStr(date, "yyyy-MM-dd HH:mm:ss")).append("'");
+					}else{
+						signSql.append(getColumnValue(field));
+					}
 				}
+				
 				if(column.equals("create_time") || column.equals("operator_time")){
 					listParam.add(date);
 				}else{
@@ -999,10 +1015,76 @@ public class CacheVo {
 			}
 		}
 		sql.append(columnSql).append(" ) VALUES (").append(signSql).append(" )");
-		int index = getJdbcDao().update(sql.toString(), listParam.toArray());
+		logger.error("--------------insertSql="+sql.toString());
+		long id = getJdbcDao().insert(sql.toString(), listParam.toArray());
+		logger.error("---------------id="+id);
+		setPKValue(String.valueOf(id));
 		insertNosql();//保存缓存数据
 		vo.deleteCustomCacheAll();//删除自定义缓存
-		return index;
+		return id;
+	}
+	
+	private String getColumnValue(Field field){
+		String typeName = field.getType().getName();
+		Object value = getFieldValue(field);
+		if(field.getType().equals(Integer.class) || typeName.equalsIgnoreCase("int")){
+			if(value == null){
+				return "0";
+			}else{
+				return value+"";
+			}
+			
+		}else if(field.getType().equals(Long.class) || typeName.equalsIgnoreCase("long")){
+			if(value == null){
+				return "0";
+			}else{
+				return value+"";
+			}
+		}else if(field.getType().equals(Boolean.class) || typeName.equalsIgnoreCase("boolean")){
+			if(value == null){
+				return "false";
+			}else{
+				return value+"";
+			}
+			
+		}else if(field.getType().equals(Double.class) || typeName.equalsIgnoreCase("double")){
+			if(value == null){
+				return "0";
+			}else{
+				return value+"";
+			}
+			
+		}else if(field.getType().equals(Float.class) || typeName.equalsIgnoreCase("float")){
+			if(value == null){
+				return "0";
+			}else{
+				return value+"";
+			}
+			
+		}else if(field.getType().equals(Character.class) || typeName.equalsIgnoreCase("char")){
+			if(value == null){
+				return "''";
+			}else{
+				return "'"+value+"'";
+			}
+			
+		}else if(field.getType().equals(java.util.Date.class)){
+			if(value == null){
+				return "''";
+			}
+			return "'"+PublicMethod.formatDateStr((java.util.Date)value, "yyyy-MM-dd HH:mm:ss")+"'";
+			
+		}else if(field.getType().equals(java.sql.Date.class)){
+			if(value == null){
+				return "''";
+			}
+			return "'"+PublicMethod.formatDateStr((java.sql.Date)value, "yyyy-MM-dd HH:mm:ss")+"'";
+		}else{
+			if(value == null){
+				return "''";
+			}
+			return "'"+value+"'";
+		}
 	}
 	
 	/**

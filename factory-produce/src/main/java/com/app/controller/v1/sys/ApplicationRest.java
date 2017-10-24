@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app.controller.common.Result;
 import com.app.dao.sql.SQLWhere;
+import com.app.dao.sql.cnd.EQCnd;
 import com.app.dao.sql.sort.DescSort;
 import com.app.entity.common.CacheVo;
 import com.app.entity.sys.SysApplicationEntity;
@@ -91,12 +92,36 @@ public class ApplicationRest extends Result{
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
     public String delete(@PathVariable("id") Long id) throws Exception{
-    	SysApplicationEntity app = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
-    	app.setApplicationId(id);
+    	//SysApplicationEntity app = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	//app.setApplicationId(id);
+    	//app.loadVo();
     	//app.deleteNoSql();
-    	app.delete();
+    	//app.delete();
+    	deleteAppLink(id);
     	//sysApplicationService.delete(app);
         return "删除成功";
+    }
+    
+    private void deleteAppLink(Long id){
+    	SysApplicationEntity app = new SysApplicationEntity();
+    	app.setApplicationId(id);
+    	try {
+			app.delete();
+		} catch (Exception e) {
+			logger.error("删除应用失败", e);
+		}
+    	List<SysApplicationEntity> list = app.getListVO(0, 1000, new SQLWhere(new EQCnd("parent_id", id)));
+    	if(list != null && list.size() > 0){
+    		for(SysApplicationEntity vo : list){
+        		try {
+        			deleteAppLink(Long.parseLong(vo.getIdValue().toString()));
+    				vo.delete();
+    			} catch (Exception e) {
+    				logger.error("删除关联应用失败", e);
+    			}
+        	}
+    	}
+    	
     }
     
     
