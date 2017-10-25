@@ -13,6 +13,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.app.util.NetworkUtil;
+import com.app.util.PublicMethod;
+import com.app.util.RedisAPI;
 
 /**
  * 功能说明：登录拦截
@@ -48,7 +50,17 @@ public class LoginInterceptor implements HandlerInterceptor
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object obj) throws Exception
     {
         //logger.error("preHandle-----权限拦截-------拦截器获取:" + request.getSession().getId());
-        logger.error("-------------登录ip"+NetworkUtil.getIpAddress2(request));
+    	String url = request.getRequestURI();
+    	if(!url.equals("/v1/sys/loginuser/logininfo")){
+    		String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(request.getSession().getId()+":userinfo");
+            if(PublicMethod.isEmptyStr(value)){
+            	request.setCharacterEncoding("UTF-8");
+                response.setContentType("text/html;charset=utf-8");
+                response.getWriter().print("未登录");
+                return false;
+            }
+    	}
+        logger.error("-----登录拦截--------ip="+NetworkUtil.getIpAddress2(request)+" | "+request.getRequestURI());
         return true;
     }
 

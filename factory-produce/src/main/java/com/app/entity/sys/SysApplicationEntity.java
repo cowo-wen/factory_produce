@@ -85,7 +85,11 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 	@Column
     private String name;
     
-	
+	/**
+	 * 图标代码
+	 */
+	@Column
+    private String iconCode;
 	/**
 	 * 应用代码
 	 */
@@ -111,6 +115,12 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 	 */
 	@Column
     private String outCode;
+	
+	/**
+	 * url
+	 */
+	@Column
+    private String url;
     
 	@Column
     private Date createTime;
@@ -120,7 +130,16 @@ public class SysApplicationEntity extends CacheVo implements Serializable
     
     
 
+	
     
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
+	}
 
 	public SysApplicationEntity()
     {

@@ -14,9 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app.controller.common.Result;
 import com.app.dao.sql.SQLWhere;
-import com.app.dao.sql.sort.AscSort;
-import com.app.entity.common.CacheVo;
-import com.app.entity.sys.SysApplicationEntity;
+import com.app.dao.sql.sort.DescSort;
+import com.app.entity.sys.SysUserEntity;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
 import com.google.gson.GsonBuilder;
@@ -31,14 +30,11 @@ import com.google.gson.JsonParser;
  * @author chenwen 2017-7-13
  */
 @RestController
-@RequestMapping("/v1/permission/sys/application")
-public class ApplicationRest extends Result{
-    public static Log logger = LogFactory.getLog(ApplicationRest.class);
+@RequestMapping("/v1/permission/sys/user")
+public class UserRest extends Result{
+    public static Log logger = LogFactory.getLog(UserRest.class);
     
   
-    
-    
-   
     
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
     public String list(@RequestParam String aoData) throws Exception{
@@ -58,14 +54,14 @@ public class ApplicationRest extends Result{
     	}
     	
     	logger.error(aoData);
-    	SysApplicationEntity log = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysUserEntity user = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
     	
-    	SQLWhere sql = new SQLWhere().orderBy(new AscSort("sort_code"));
+    	SQLWhere sql = new SQLWhere().orderBy(new DescSort("user_id"));
     	
-    	List<CacheVo> list = log.getListVO(iDisplayStart, iDisplayLength, sql);
+    	List<SysUserEntity> list = user.getListVO(iDisplayStart, iDisplayLength, sql);
     	
     	
-    	long count = log.getCount(sql);
+    	long count = user.getCount(sql);
     	Map<String,Object> map = new HashMap<String,Object>();
     	map.put("status", 200);
     	map.put("data", list);
@@ -83,21 +79,17 @@ public class ApplicationRest extends Result{
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
     public String vo(@PathVariable("id") Long id) throws Exception{
-    	SysApplicationEntity entity = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
-    	entity.setApplicationId(id);
+    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	entity.setUserId(id);
     	entity.loadVo();
         return success(entity);
     }
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
     public String delete(@PathVariable("id") Long id) throws Exception{
-    	SysApplicationEntity app = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
-    	app.setApplicationId(id);
-    	//app.loadVo();
-    	//app.deleteNoSql();
-    	app.deleteLinkChild("parent_id");
-    	//deleteAppLink(id);
-    	//sysApplicationService.delete(app);
+    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	entity.setUserId(id);
+    	entity.delete();
         return "删除成功";
     }
     
@@ -108,41 +100,25 @@ public class ApplicationRest extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
     public String update(@RequestParam String aoData) throws Exception{
-    	SysApplicationEntity entity = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
     	logger.error("-------"+aoData);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	
-    	if(PublicMethod.isEmptyStr(entity.getName())){
-    		return error("应用名称不能为空");
+    	if(PublicMethod.isEmptyStr(entity.getUserName())){
+    		return error("人员名称不能为空");
     	}
     	
-    	if(PublicMethod.isEmptyStr(entity.getApplicationCode())){
-    		return error("应用编号不能为空");
+    	if(PublicMethod.isEmptyStr(entity.getNumber())){
+    		return error("人员编号不能为空");
     	}
     	
-    	if(PublicMethod.isEmptyValue(entity.getEventType())){
-    		return error("事件类型不能为空");
+    	if(PublicMethod.isEmptyValue(entity.getMobile())){
+    		return error("手机号码不能为空");
+    	}else{
+    		entity.setLoginName(entity.getMobile());
     	}
     	
-    	if(PublicMethod.isEmptyValue(entity.getTerminalType())){
-    		return error("终端类型不能为空");
-    	}
     	
-    	if(PublicMethod.isEmptyValue(entity.getAppType())){
-    		return error("应用类型不能为空");
-    	}
-    	
-    	if(PublicMethod.isEmptyValue(entity.getUrl())){
-    		//return error("url路径不能为空");
-    	}
-    	
-    	if(PublicMethod.isEmptyValue(entity.getParentId())){
-    		entity.setParentId(0L);
-    	}
-    	
-    	if(PublicMethod.isEmptyValue(entity.getOutCode())){
-    		entity.setOutCode("");
-    	}
     	
     	if(PublicMethod.isEmptyValue(entity.getValid())){
     		entity.setValid(1);
@@ -150,7 +126,7 @@ public class ApplicationRest extends Result{
     	try{
     		entity.update();
     		//sysApplicationService.update(entity);
-        	return success("修改成功",entity.getApplicationId());
+        	return success("修改成功",entity.getUserId());
     	}catch(Exception e){
     		return error(e.getMessage());
     	}
@@ -159,48 +135,30 @@ public class ApplicationRest extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
     public String add(@RequestParam String aoData) throws Exception{
-    	SysApplicationEntity entity = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	
-    	if(PublicMethod.isEmptyStr(entity.getName())){
-    		return error("应用名称不能为空");
+    	if(PublicMethod.isEmptyStr(entity.getUserName())){
+    		return error("人员名称不能为空");
     	}
     	
-    	if(PublicMethod.isEmptyStr(entity.getApplicationCode())){
-    		return error("应用编号不能为空");
+    	if(PublicMethod.isEmptyStr(entity.getNumber())){
+    		return error("人员编号不能为空");
     	}
     	
-    	if(PublicMethod.isEmptyValue(entity.getEventType())){
-    		return error("事件类型不能为空");
+    	if(PublicMethod.isEmptyValue(entity.getMobile())){
+    		return error("手机号码不能为空");
+    	}else{
+    		entity.setLoginName(entity.getMobile());
     	}
     	
-    	if(PublicMethod.isEmptyValue(entity.getTerminalType())){
-    		return error("终端类型不能为空");
-    	}
-    	
-    	if(PublicMethod.isEmptyValue(entity.getUrl())){
-    		//return error("url路径不能为空");
-    	}
-    	
-    	if(PublicMethod.isEmptyValue(entity.getAppType())){
-    		return error("应用类型不能为空");
-    	}
-    	
-    	if(PublicMethod.isEmptyValue(entity.getParentId())){
-    		entity.setParentId(0L);
-    	}
-    	
-    	if(PublicMethod.isEmptyValue(entity.getOutCode())){
-    		entity.setOutCode("");
-    	}
     	
     	if(PublicMethod.isEmptyValue(entity.getValid())){
     		entity.setValid(1);
     	}
     	try{
     		entity.insert();
-    		//sysApplicationService.save(entity);
-        	return success("新增成功",entity.getApplicationId());
+        	return success("新增成功",entity.getUserId());
     	}catch(Exception e){
     		return error(e.getMessage());
     	}

@@ -52,28 +52,21 @@ public class OAuthenticationProvider implements AuthenticationProvider {
         if(PublicMethod.isEmptyStr(checkToken)){
         	throw new LoginAccountStatusException("验证码已失效");
         }
-        
         if(!token.equals(checkToken)){
         	throw new LoginAccountStatusException("验证码不正确");
         }
-        
         String username = authentication.getName();
-        logger.error("|||"+username);
         if(PublicMethod.isEmptyStr(username)){
         	throw new LoginAccountStatusException("用户名不能为空");
         }
-        
         String password = (String) authentication.getCredentials();
-        
         if(PublicMethod.isEmptyStr(password)){
         	throw new LoginAccountStatusException("密码不能为空");
         }
-        
         SysUserDetails user = (SysUserDetails) userService.loadUserByUsername(username);
         if(user == null || user.getUserId() == null || user.getUserId() == 0){
             throw new LoginAccountStatusException("不存在的用户名");
         }
-
         //加密过程在这里体现
         if (!MD5.encode(password).equals(user.getPassword())) {
             throw new LoginAccountStatusException("密码不正确");
@@ -81,8 +74,6 @@ public class OAuthenticationProvider implements AuthenticationProvider {
         if(user.getValid() == null || user.getValid() != 1){
         	throw new LoginAccountStatusException("用户已被锁，请联系管理员");
         }
-        
-
         Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
         if(user.getType() != 1 && (authorities == null || authorities.size() == 0)){
         	throw new LoginAccountStatusException("用户未分配角色权限，不能登录");

@@ -465,7 +465,9 @@ public class CacheVo {
 			return null;
 		}
     }
-	
+	public <T extends CacheVo> List<T> getListVO(SQLWhere where){
+		return getListVO(0 ,10000, where);
+	}
 	
 	public <T extends CacheVo> List<T> getListVO(int page ,int row,SQLWhere where){
 		row = row > 10000 || row <= 0 ? 10000:row;
@@ -667,6 +669,8 @@ public class CacheVo {
 							
 							if(mapVo.containsKey(columnORM.get(field.getName()))){
 								vo.setFieldValue(field,mapVo.get(columnORM.get(field.getName())));
+							}else{
+								vo.setFieldValue(field," ");
 							}
 						}
 						listVO.add(vo);
@@ -1099,6 +1103,30 @@ public class CacheVo {
 		deleteNoSql();
 		deleteCustomCacheAll();//删除自定义缓存
 		return index;
+	}
+	
+	/**
+	 * 删除，包括子记录
+	 * @return
+	 */
+	public int  deleteLinkChild(String parentName) throws Exception{
+		
+		List<CacheVo> list = getListVO(0, 1000, new SQLWhere(new EQCnd(parentName, getIdValue())));
+    	if(list != null && list.size() > 0){
+    		for(CacheVo vo : list){
+        		try {
+        			StringBuilder sql = new StringBuilder("delete FROM ").append(getTableName());
+        			sql.append(" where ").append(getCustomORM().get(getPKField().getName())).append(" = ").append(getIdValue().toString());
+        			getJdbcDao().update(sql.toString(),null);
+        			deleteNoSql();
+        			deleteCustomCacheAll();//删除自定义缓存
+        			return vo.deleteLinkChild(parentName);
+    			} catch (Exception e) {
+    				logger.error("删除关联应用失败", e);
+    			}
+        	}
+    	}
+		return delete();
 	}
 	
 	

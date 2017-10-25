@@ -12,9 +12,9 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.app.entity.sys.SysUserEntity;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 /**
@@ -50,32 +50,52 @@ public class PermissionInterceptor implements HandlerInterceptor
      */
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object obj) throws Exception
     {
-    	logger.error(request.getSession().getId()+"------权限拦截-------url="+request.getRequestURI());
-    	boolean bool = checkURL(request.getRequestURI(),request.getRequestURI());
-        logger.error(request.getSession().getId()+"------权限拦截-------application_code="+request.getParameter("application_code"));
-        
-        String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(request.getSession().getId());
-        if(PublicMethod.isEmptyStr(value)){
-        	request.setCharacterEncoding("UTF-8");
-            response.setContentType("text/html;charset=utf-8");
-            response.getWriter().print("非法请求");  
-        }else{
-        	SysUserEntity user = new SysUserEntity();
-        	user.parse(new JsonParser().parse(value).getAsJsonObject());
-        	if(user.getLoginName().equals("admin")){
-        		logger.error("==============超级用户不用判断权限==============");
-        		return true;
-        	}else if(bool){
-            	return true;
-            }else{
+    	
+    	long time = System.currentTimeMillis();
+        try{
+        	String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(request.getSession().getId()+":userinfo");
+            if(PublicMethod.isEmptyStr(value)){
             	request.setCharacterEncoding("UTF-8");
                 response.setContentType("text/html;charset=utf-8");
-                response.getWriter().print("没有权限操作");
+                response.getWriter().print("非法请求");  
+            }else{
+            	JsonObject jsonObject= new JsonParser().parse(value).getAsJsonObject();
+            	if(jsonObject.get("login_name").getAsString().equals("admin")){
+            		return true;
+            	}else{
+            		String applicationCode = request.getParameter("application_code");
+            		if(PublicMethod.isEmptyStr(applicationCode)){
+            			request.setCharacterEncoding("UTF-8");
+                        response.setContentType("text/html;charset=utf-8");
+                        response.getWriter().print("参数不全");
+            		}else{
+            			String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(request.getSession().getId()+":applicationCode:"+applicationCode);
+            			if(PublicMethod.isEmptyStr(url)){
+            				request.setCharacterEncoding("UTF-8");
+                            response.setContentType("text/html;charset=utf-8");
+                            response.getWriter().print("没有权限操作!");
+            			}else{
+            				boolean bool = checkURL(request.getRequestURI(),url);
+            				if(bool){
+            					return true;
+            				}else{
+            					request.setCharacterEncoding("UTF-8");
+                                response.setContentType("text/html;charset=utf-8");
+                                response.getWriter().print("没有权限操作.");
+            				}
+            			}
+            			
+            		}
+                }
             }
+            return false;
+        }catch(Exception e){
+        	logger.error("验证权限", e);
+        	throw e;
+        }finally{
+        	logger.error("验证权限耗时----------time="+(System.currentTimeMillis()-time)+"毫秒");
         }
         
-        
-        return false;
     }
     
     /**
