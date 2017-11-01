@@ -18,11 +18,12 @@ import com.app.dao.sql.sort.DescSort;
 import com.app.entity.sys.SysUserEntity;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.xx.util.string.Format;
+import com.xx.util.string.MD5;
 
 /**
  * 功能说明：应用管理
@@ -68,7 +69,7 @@ public class UserRest extends Result{
     	map.put("sEcho", ++sEcho);
     	map.put("iTotalRecords", count);
     	map.put("iTotalDisplayRecords", count);
-        return new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
+        return success(map);
     }
     
     /**
@@ -86,11 +87,24 @@ public class UserRest extends Result{
     }
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
-    public String delete(@PathVariable("id") Long id) throws Exception{
+    public String delete(@PathVariable("id") Long id) {
     	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
     	entity.setUserId(id);
-    	entity.delete();
-        return "删除成功";
+    	entity.loadVo();
+    	if(!PublicMethod.isEmptyStr(entity.getLoginName()) && entity.getLoginName().equals("admin")){
+    		return error("超级用户不能删除");
+    	}else{
+    		try {
+				entity.delete();
+				return success("删除成功");
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return error("删除失败:"+e.getMessage());
+			}
+            
+    	}
+    	
     }
     
    
@@ -115,6 +129,9 @@ public class UserRest extends Result{
     	if(PublicMethod.isEmptyValue(entity.getMobile())){
     		return error("手机号码不能为空");
     	}else{
+    		if(entity.getLoginName().equals("admin")){
+    			return error("超级管理员不能修改");
+    		}
     		entity.setLoginName(entity.getMobile());
     	}
     	
@@ -124,8 +141,61 @@ public class UserRest extends Result{
     		entity.setValid(1);
     	}
     	try{
+    		
     		entity.update();
     		//sysApplicationService.update(entity);
+        	return success("修改成功",entity.getUserId());
+    	}catch(Exception e){
+    		return error(e.getMessage());
+    	}
+    	
+    }
+    
+    /**
+     * 管理员修改用户密码
+     * @param aoData
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/managePW")
+    public String managePW(@RequestParam String aoData) throws Exception{
+    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	logger.error("-------"+aoData);
+    	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
+    	
+    	if(PublicMethod.isEmptyStr(entity.getPassword()) || entity.getPassword().length() != 32){
+    		return error("密码不能为空");
+    	}
+    	
+    	entity.setPassword(MD5.encode(entity.getPassword()));
+    	try{
+    		
+    		entity.update();
+        	return success("修改成功",entity.getUserId());
+    	}catch(Exception e){
+    		return error(e.getMessage());
+    	}
+    	
+    }
+    
+    /**
+     * 用户修改个人密码
+     * @param aoData
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/updatePW")
+    public String updatePW(@RequestParam String aoData) throws Exception{
+    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
+    	if(PublicMethod.isEmptyStr(entity.getPassword()) || entity.getPassword().length() != 32){
+    		return error("密码不能为空");
+    	}
+    	
+    	entity.setPassword(MD5.encode(entity.getPassword()));
+    	try{
+    		
+    		entity.update();
         	return success("修改成功",entity.getUserId());
     	}catch(Exception e){
     		return error(e.getMessage());
@@ -137,7 +207,7 @@ public class UserRest extends Result{
     public String add(@RequestParam String aoData) throws Exception{
     	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
-    	
+    	logger.error("aoData="+aoData);
     	if(PublicMethod.isEmptyStr(entity.getUserName())){
     		return error("人员名称不能为空");
     	}
@@ -149,9 +219,14 @@ public class UserRest extends Result{
     	if(PublicMethod.isEmptyValue(entity.getMobile())){
     		return error("手机号码不能为空");
     	}else{
+    		if(!Format.isMobile(entity.getMobile())){
+    			return error("非法的手机号码");
+    		}
     		entity.setLoginName(entity.getMobile());
     	}
     	
+    	entity.setPassword(MD5.encode(entity.getMobile().substring(5)));
+    	entity.setType(2);
     	
     	if(PublicMethod.isEmptyValue(entity.getValid())){
     		entity.setValid(1);

@@ -90,14 +90,31 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 	 */
 	@Column
     private String iconCode;
+	
 	/**
 	 * 应用代码
 	 */
 	@Column
 	@CustomCache(sort = 0)
     private String applicationCode;
+	
+	/**
+	 * 父应用代码
+	 */
+	@Column
+    private String parentApplicationCode;
+	
+	
     
 	
+	public String getParentApplicationCode() {
+		return parentApplicationCode;
+	}
+
+	public void setParentApplicationCode(String parentApplicationCode) {
+		this.parentApplicationCode = parentApplicationCode;
+	}
+
 	/**
 	 * 备注
 	 */

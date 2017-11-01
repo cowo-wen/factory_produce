@@ -110,14 +110,12 @@ public class ApplicationRest extends Result{
     public String update(@RequestParam String aoData) throws Exception{
     	SysApplicationEntity entity = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
     	logger.error("-------"+aoData);
-    	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
+    	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
+    	jo.remove("applicationCode");
+    	entity.parse(jo);
     	
     	if(PublicMethod.isEmptyStr(entity.getName())){
     		return error("应用名称不能为空");
-    	}
-    	
-    	if(PublicMethod.isEmptyStr(entity.getApplicationCode())){
-    		return error("应用编号不能为空");
     	}
     	
     	if(PublicMethod.isEmptyValue(entity.getEventType())){
@@ -198,6 +196,14 @@ public class ApplicationRest extends Result{
     		entity.setValid(1);
     	}
     	try{
+    		if(entity.getParentId() > 0){
+    			SysApplicationEntity entity2 = new SysApplicationEntity();
+    			entity2.setApplicationId(entity.getParentId());
+    			entity2.loadVo();
+    			entity.setParentApplicationCode(entity2.getApplicationCode());
+    		}else{
+    			entity.setParentApplicationCode("0");
+    		}
     		entity.insert();
     		//sysApplicationService.save(entity);
         	return success("新增成功",entity.getApplicationId());

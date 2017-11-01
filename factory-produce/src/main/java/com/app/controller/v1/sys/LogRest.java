@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.app.controller.common.Result;
 import com.app.dao.sql.SQLWhere;
 import com.app.dao.sql.sort.DescSort;
 import com.app.entity.common.CacheVo;
 import com.app.entity.sys.SysLogEntity;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -28,9 +28,9 @@ import com.google.gson.JsonParser;
  * @author chenwen 2017-7-13
  */
 @RestController
-@RequestMapping("/v1/permission/sys/loginfo")
-public class LogInfoRest {
-    public static Log logger = LogFactory.getLog(LogInfoRest.class);
+@RequestMapping("/v1/permission/sys/log")
+public class LogRest extends Result{
+    public static Log logger = LogFactory.getLog(LogRest.class);
     
   
     
@@ -68,7 +68,7 @@ public class LogInfoRest {
     	map.put("sEcho", ++sEcho);
     	map.put("iTotalRecords", count);
     	map.put("iTotalDisplayRecords", count);
-        return new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
+        return success(map);
     }
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
@@ -76,7 +76,7 @@ public class LogInfoRest {
     	SysLogEntity log = new SysLogEntity();
     	log.setLogId(id);
     	log.delete();
-        return "删除成功";
+        return success("删除成功");
     }
     
     
@@ -94,25 +94,10 @@ public class LogInfoRest {
     		log.setLogId(Long.parseLong(id));
     		log.delete();
     	}
-        return "批量删除成功";
+    	return success("批量删除成功");
     }
     
     
-    
-    @RequestMapping(method=RequestMethod.PUT,value="/update")
-    public String update(@RequestParam(name="id",required=true) String id) throws Exception{
-    	logger.error("------------------修改------接收参数"+id);
-    	
-        return "接收参数";
-    }
-    
-    
-    @RequestMapping(method=RequestMethod.POST,value="/add")
-    public String add(@RequestParam(name="id",required=true) String id) throws Exception{
-    	logger.error("----------------新增--------接收参数"+id);
-    	
-        return "接收参数";
-    }
-    
+   
     
 }

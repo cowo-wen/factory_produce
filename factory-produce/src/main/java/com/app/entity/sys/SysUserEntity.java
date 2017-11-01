@@ -39,6 +39,9 @@ public class SysUserEntity extends CacheVo  implements Serializable
     @Column
     private Long userId;
     
+    /**
+     * 用户类型1系统管理员，2普通用户
+     */
     @Column
     private Integer type;
     
@@ -55,6 +58,7 @@ public class SysUserEntity extends CacheVo  implements Serializable
     private String mobile;
     
     @Column
+    @CustomCache(sort = 0,gorup=1)
     private String number;
     
     @Column

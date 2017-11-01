@@ -21,6 +21,7 @@ import com.app.bean.SysUserDetails;
 import com.app.controller.common.Result;
 import com.app.dao.sql.SQLWhere;
 import com.app.dao.sql.cnd.EQCnd;
+import com.app.dao.sql.sort.AscSort;
 import com.app.entity.sys.SysApplicationEntity;
 import com.app.entity.sys.SysUserEntity;
 import com.app.util.RedisAPI;
@@ -55,9 +56,15 @@ public class LoginUserRest extends Result{
     			redisAPI.del(iterable.next());
     		}
     	}
+    	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
+    	SysUserEntity user = new SysUserEntity();
+    	user.setUserId(userDetails.getUserId());
+    	user.loadVo();
     	List<SysApplicationEntity> list = null;
     	if(terminalType.equals("1")){
-    		list = new SysApplicationEntity().getListVO(new SQLWhere(new EQCnd("terminal_type",Integer.parseInt(terminalType))));
+    		if(user.getLoginName().equals("admin")){
+    			list = new SysApplicationEntity().getListVO(new SQLWhere(new EQCnd("terminal_type",Integer.parseInt(terminalType))).orderBy(new AscSort("sort_Code","application_id")));
+    		}
     	}
     	
     	if(list != null && list.size() > 0){
@@ -71,10 +78,7 @@ public class LoginUserRest extends Result{
     		}
     	}
     	
-    	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
-    	SysUserEntity user = new SysUserEntity();
-    	user.setUserId(userDetails.getUserId());
-    	user.loadVo();
+    	
     	
     	Map<String,Object> map = new HashMap<String,Object>();
     	map.put("user_name", user.getUserName());

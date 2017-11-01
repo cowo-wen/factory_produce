@@ -60,10 +60,11 @@ public class PermissionInterceptor implements HandlerInterceptor
                 response.getWriter().print("非法请求");  
             }else{
             	JsonObject jsonObject= new JsonParser().parse(value).getAsJsonObject();
+            	String applicationCode = request.getParameter("application_code");
+            	logger.error("---------applicationCode="+applicationCode);
             	if(jsonObject.get("login_name").getAsString().equals("admin")){
             		return true;
             	}else{
-            		String applicationCode = request.getParameter("application_code");
             		if(PublicMethod.isEmptyStr(applicationCode)){
             			request.setCharacterEncoding("UTF-8");
                         response.setContentType("text/html;charset=utf-8");
