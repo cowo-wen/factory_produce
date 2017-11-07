@@ -14,12 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app.controller.common.Result;
 import com.app.dao.sql.SQLWhere;
+import com.app.dao.sql.cnd.NotINCnd;
 import com.app.dao.sql.sort.AscSort;
-import com.app.entity.common.CacheVo;
 import com.app.entity.sys.SysApplicationEntity;
+import com.app.entity.sys.SysRoleApplicationEntity;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -32,8 +32,8 @@ import com.google.gson.JsonParser;
  */
 @RestController
 @RequestMapping("/v1/permission/sys/application")
-public class ApplicationRest extends Result{
-    public static Log logger = LogFactory.getLog(ApplicationRest.class);
+public class ApplicationAPI extends Result {
+    public static Log logger = LogFactory.getLog(ApplicationAPI.class);
     
   
     
@@ -58,22 +58,25 @@ public class ApplicationRest extends Result{
     	}
     	
     	logger.error(aoData);
-    	SysApplicationEntity log = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysApplicationEntity entity = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
     	
     	SQLWhere sql = new SQLWhere().orderBy(new AscSort("sort_code"));
     	
-    	List<CacheVo> list = log.getListVO(iDisplayStart, iDisplayLength, sql);
+    	List<SysApplicationEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
     	
     	
-    	long count = log.getCount(sql);
+    	long count = 0;
+    	//count = entity.getCount(sql);
     	Map<String,Object> map = new HashMap<String,Object>();
     	map.put("status", 200);
     	map.put("data", list);
     	map.put("sEcho", ++sEcho);
     	map.put("iTotalRecords", count);
     	map.put("iTotalDisplayRecords", count);
-        return new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
+        return success(map);
     }
+    
+    
     
     /**
      * 获取单个对象
@@ -93,12 +96,14 @@ public class ApplicationRest extends Result{
     public String delete(@PathVariable("id") Long id) throws Exception{
     	SysApplicationEntity app = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
     	app.setApplicationId(id);
-    	//app.loadVo();
-    	//app.deleteNoSql();
     	app.deleteLinkChild("parent_id");
-    	//deleteAppLink(id);
-    	//sysApplicationService.delete(app);
-        return "删除成功";
+    	List<SysRoleApplicationEntity> list = new SysRoleApplicationEntity().getListVO(new SQLWhere(new NotINCnd("application_id", " select application_id from t_sys_application ")));
+    	if(list != null && list.size() > 0){
+    		for(SysRoleApplicationEntity ra : list){
+        		ra.delete();
+        	}
+    	}
+    	return success("删除成功");
     }
     
    
@@ -208,6 +213,7 @@ public class ApplicationRest extends Result{
     		//sysApplicationService.save(entity);
         	return success("新增成功",entity.getApplicationId());
     	}catch(Exception e){
+    		logger.error("新增出错", e);
     		return error(e.getMessage());
     	}
     	

@@ -44,7 +44,7 @@ public class SysUserDetailsService implements UserDetailsService
         	if(list.size() == 0){
         		SysAccountEntity account = new SysAccountEntity(RedisAPI.REDIS_CORE_DATABASE);
             	List<?> accountList = account.getCustomCache(userName);
-            	if(accountList.size() == 0){
+            	if(accountList == null || accountList.size() == 0){
             		return null;
             	}else{
             		user = (SysUserEntity) accountList.get(0);
@@ -53,12 +53,21 @@ public class SysUserDetailsService implements UserDetailsService
         		user = (SysUserEntity) list.get(0);
         	}
             
-            List<SysUserRoleEntity> roles = new ArrayList<SysUserRoleEntity>();
-            SysUserRoleEntity ur = new SysUserRoleEntity();
-            ur.setId(1L);
-            ur.setRoleId(1L);
-            ur.setUserId(1L);
-            roles.add(ur);
+            List<SysUserRoleEntity> roles = null;
+            
+            if(user.getType() == SysUserEntity.USER_ADMIN){
+            	roles =  new ArrayList<SysUserRoleEntity>();
+            	SysUserRoleEntity ur = new SysUserRoleEntity();
+                ur.setId(1L);
+                ur.setRoleId(1L);
+                ur.setUserId(1L);
+                roles.add(ur);
+            }else{
+            	SysUserRoleEntity ur = new SysUserRoleEntity();
+            	ur.setUserId(user.getUserId());
+            	roles =ur.queryCustomCacheValue(0, null);
+            	logger.error("----------------获取角色数据:"+roles.size());
+            }
             return new SysUserDetails(user, roles);
         }
         catch (Exception e)

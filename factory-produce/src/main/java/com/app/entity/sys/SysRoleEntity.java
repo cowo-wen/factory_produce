@@ -15,6 +15,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.app.entity.common.CacheVo;
+import com.app.entity.common.CustomCache;
+import com.app.entity.common.TableCache;
 
 /**
  * 功能说明：系统角色表
@@ -23,9 +25,12 @@ import com.app.entity.common.CacheVo;
  */
 @Entity
 @Table(name = "t_sys_role")
+@TableCache(isCache=true)
 public class SysRoleEntity extends CacheVo implements Serializable {
 
 
+	public static final String ADMIN_CODE = "1000";
+	
 	/**
 	 * 
 	 */
@@ -36,21 +41,52 @@ public class SysRoleEntity extends CacheVo implements Serializable {
 	@Column
 	private Long roleId;
 	
+	/**
+	 * 角色名称
+	 */
 	@Column
 	private String roleName;
 
+	/**
+	 * 父id
+	 */
 	@Column
 	private Long parentId;
-	
+	/**
+	 * 角色编码
+	 */
 	@Column
+	@CustomCache(sort = 0)
 	private String roleCode;
 	
+	/**
+	 * 根接点查询所有子接点使用
+	 * 连接码
+	 */
+	@Column
+	private String linkCode;
+	
+	/**
+	 * 是否有效 1是 2否
+	 */
+	@Column
+    private Integer valid;
+	
+	/**
+	 * 备注
+	 */
 	@Column
 	private String remark;
 	
+	/**
+	 * pc端浏览主页
+	 */
 	@Column
 	private String pcIndex;
 	
+	/**
+	 * 微信端浏览主页
+	 */
 	@Column
 	private String wxIndex;
 
@@ -76,8 +112,9 @@ public class SysRoleEntity extends CacheVo implements Serializable {
 		return roleId;
 	}
 
-	public void setRoleId(Long roleId) {
+	public SysRoleEntity setRoleId(Long roleId) {
 		this.roleId = roleId;
+		return this;
 	}
 
 	public String getRoleName() {
@@ -100,8 +137,9 @@ public class SysRoleEntity extends CacheVo implements Serializable {
 		return roleCode;
 	}
 
-	public void setRoleCode(String roleCode) {
+	public SysRoleEntity setRoleCode(String roleCode) {
 		this.roleCode = roleCode;
+		return this;
 	}
 
 	
@@ -144,6 +182,22 @@ public class SysRoleEntity extends CacheVo implements Serializable {
 
 	public void setOperatorTime(Date operatorTime) {
 		this.operatorTime = operatorTime;
+	}
+
+	public Integer getValid() {
+		return valid;
+	}
+
+	public void setValid(Integer valid) {
+		this.valid = valid;
+	}
+
+	public String getLinkCode() {
+		return linkCode;
+	}
+
+	public void setLinkCode(String linkCode) {
+		this.linkCode = linkCode;
 	}
 
 	

@@ -6,6 +6,7 @@ package com.app.entity.sys;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,10 +14,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
+import com.google.gson.annotations.Expose;
 
 /**
  * 功能说明：系统用户表
@@ -33,6 +36,16 @@ public class SysUserEntity extends CacheVo  implements Serializable
      * 
      */
     private static final long serialVersionUID = -7577009420662238475L;
+    
+    
+    /**
+     * 管理员类型
+     */
+    public static final int USER_ADMIN = 1;
+    /**
+     * 一般类型
+     */
+    public static final int USER_GENERAL = 2;
 	
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,7 +71,7 @@ public class SysUserEntity extends CacheVo  implements Serializable
     private String mobile;
     
     @Column
-    @CustomCache(sort = 0,gorup=1)
+    @CustomCache(sort = 0,gorup={1})
     private String number;
     
     @Column
@@ -73,6 +86,13 @@ public class SysUserEntity extends CacheVo  implements Serializable
     
     @Column
     private Date operatorTime;
+    
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    @Transient
+    @Expose(deserialize = true)
+    private String role;
 
     public SysUserEntity()
     {
@@ -114,8 +134,9 @@ public class SysUserEntity extends CacheVo  implements Serializable
 		return userId;
 	}
 
-	public void setUserId(Long userId) {
+	public SysUserEntity setUserId(Long userId) {
 		this.userId = userId;
+		return this;
 	}
 
 	public String getUserName() {
@@ -187,6 +208,30 @@ public class SysUserEntity extends CacheVo  implements Serializable
 
 	public void setValid(Integer valid) {
 		this.valid = valid;
+	}
+
+	public String getRole() {
+		StringBuilder sb = new StringBuilder();
+		if(this.userId > 0){
+			List<SysUserRoleEntity> list = new SysUserRoleEntity().setUserId(this.userId).queryCustomCacheValue(0, null);
+			if(list != null && list.size() > 0){
+				
+				SysRoleEntity r = new SysRoleEntity();
+				r.setRoleId(list.get(0).getRoleId()).loadVo();
+				sb.append(r.getRoleName());
+				for(int i = 1,len = list.size();i<len;i++){
+					SysRoleEntity ri = new SysRoleEntity();
+					ri.setRoleId(list.get(i).getRoleId()).loadVo();
+					sb.append(" ").append(ri.getRoleName());
+				}
+			}
+		}
+		this.role = sb.toString();
+		return this.role;
+	}
+
+	public void setRole(String role) {
+		this.role =role;
 	}
 
     

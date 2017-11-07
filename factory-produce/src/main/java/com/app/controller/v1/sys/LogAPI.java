@@ -29,8 +29,8 @@ import com.google.gson.JsonParser;
  */
 @RestController
 @RequestMapping("/v1/permission/sys/log")
-public class LogRest extends Result{
-    public static Log logger = LogFactory.getLog(LogRest.class);
+public class LogAPI extends Result{
+    public static Log logger = LogFactory.getLog(LogAPI.class);
     
   
     

@@ -13,6 +13,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
@@ -26,12 +27,9 @@ import com.app.entity.common.TableCache;
 @Entity
 @Table(name = "t_sys_application")
 @TableCache(isCache=true)
-public class SysApplicationEntity extends CacheVo implements Serializable
+public class SysApplicationEntity extends CacheVo implements Comparable<SysApplicationEntity>,Serializable
 {
 
-	
-	
-	
 	
 
 	/**
@@ -74,7 +72,7 @@ public class SysApplicationEntity extends CacheVo implements Serializable
     private Integer eventType;
 	
 	/**
-	 * 是否有效
+	 * 是否有效 1是 2否
 	 */
 	@Column
     private Integer valid;
@@ -103,6 +101,9 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 	 */
 	@Column
     private String parentApplicationCode;
+	
+	
+	
 	
 	
     
@@ -148,6 +149,17 @@ public class SysApplicationEntity extends CacheVo implements Serializable
     
 
 	
+	
+	/**
+	 * @Transient 注解不用创建字段到数据库
+	 */
+	@Transient
+	private boolean open;
+	
+	
+	
+	@Transient
+	private boolean checked;
     
 
 	public String getUrl() {
@@ -177,8 +189,9 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 		return applicationId;
 	}
 
-	public void setApplicationId(Long applicationId) {
+	public SysApplicationEntity setApplicationId(Long applicationId) {
 		this.applicationId = applicationId;
+		return this;
 	}
 
 	public Long getParentId() {
@@ -280,6 +293,48 @@ public class SysApplicationEntity extends CacheVo implements Serializable
 	public void setSortCode(Integer sortCode) {
 		this.sortCode = sortCode;
 	}
+
+	public String getIconCode() {
+		return iconCode;
+	}
+
+	public void setIconCode(String iconCode) {
+		this.iconCode = iconCode;
+	}
+
+	public boolean isOpen() {
+		return open;
+	}
+
+	public void setOpen(boolean open) {
+		this.open = open;
+	}
+
+	public boolean isChecked() {
+		return checked;
+	}
+
+	public void setChecked(boolean checked) {
+		this.checked = checked;
+	}
+
+	
+
+	@Override
+	public int compareTo(SysApplicationEntity o) {
+		int flag=this.parentId.compareTo(o.parentId);
+		if(flag==0){
+			return this.sortCode.compareTo(o.sortCode);
+		}else{
+			return flag;
+		} 
+	}
+
+	
+	
+	
+	
+	
 
    
     

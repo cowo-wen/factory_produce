@@ -15,6 +15,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.app.entity.common.CacheVo;
+import com.app.entity.common.CustomCache;
+import com.app.entity.common.TableCache;
 
 /**
  * 功能说明：系统用户角色关联表
@@ -23,6 +25,7 @@ import com.app.entity.common.CacheVo;
  */
 @Entity
 @Table(name = "t_sys_user_role")
+@TableCache(isCache=true)
 public class SysUserRoleEntity extends CacheVo implements Serializable {
 
 	/**
@@ -36,9 +39,11 @@ public class SysUserRoleEntity extends CacheVo implements Serializable {
 	private Long id;
 	
 	@Column
+	@CustomCache(sort = 0)
 	private Long userId;
 
 	@Column
+	@CustomCache(hashKey=true, sort = 1)
 	private Long roleId;
 
 	@Column
@@ -71,8 +76,9 @@ public class SysUserRoleEntity extends CacheVo implements Serializable {
 		return userId;
 	}
 
-	public void setUserId(Long userId) {
+	public SysUserRoleEntity setUserId(Long userId) {
 		this.userId = userId;
+		return this;
 	}
 
 	public Date getCreateTime() {

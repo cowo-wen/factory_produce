@@ -15,6 +15,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.app.entity.common.CacheVo;
+import com.app.entity.common.CustomCache;
+import com.app.entity.common.TableCache;
 
 /**
  * 功能说明：角色应用表
@@ -23,6 +25,7 @@ import com.app.entity.common.CacheVo;
  */
 @Entity
 @Table(name = "t_sys_role_application")
+@TableCache(isCache=true)
 public class SysRoleApplicationEntity extends CacheVo implements Serializable {
 
 
@@ -37,9 +40,11 @@ public class SysRoleApplicationEntity extends CacheVo implements Serializable {
 	private Long id;
 	
 	@Column
+	@CustomCache(sort = 0)
 	private Long roleId;
 	
 	@Column
+	@CustomCache(hashKey=true, sort = 1)
 	private Long applicationId;
 
 	@Column
@@ -64,8 +69,9 @@ public class SysRoleApplicationEntity extends CacheVo implements Serializable {
 		return roleId;
 	}
 
-	public void setRoleId(Long roleId) {
+	public SysRoleApplicationEntity setRoleId(Long roleId) {
 		this.roleId = roleId;
+		return this;
 	}
 	
 	

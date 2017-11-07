@@ -14,10 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app.controller.common.Result;
 import com.app.dao.sql.SQLWhere;
+import com.app.dao.sql.cnd.LikeCnd;
 import com.app.dao.sql.sort.DescSort;
 import com.app.entity.sys.SysUserEntity;
+import com.app.entity.sys.SysUserRoleEntity;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
+import com.app.util.StaticBean;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -26,21 +29,21 @@ import com.xx.util.string.Format;
 import com.xx.util.string.MD5;
 
 /**
- * 功能说明：应用管理
+ * 功能说明：用户管理
  * 
  * @author chenwen 2017-7-13
  */
 @RestController
 @RequestMapping("/v1/permission/sys/user")
-public class UserRest extends Result{
-    public static Log logger = LogFactory.getLog(UserRest.class);
+public class UserAPI extends Result{
+    public static Log logger = LogFactory.getLog(UserAPI.class);
     
   
     
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
     public String list(@RequestParam String aoData) throws Exception{
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
-    	
+    	SQLWhere sql = new SQLWhere().orderBy(new DescSort("user_id"));
     	int iDisplayStart = 0;// 起始  
     	int iDisplayLength = 10;// size 
     	int sEcho = 0;
@@ -52,13 +55,20 @@ public class UserRest extends Result{
                 iDisplayStart = jsonObject.get("value").getAsInt();  
             else if (jsonObject.get("name").getAsString().equals("iDisplayLength"))  
                 iDisplayLength = jsonObject.get("value").getAsInt(); 
+            else if (jsonObject.get("name").getAsString().equals("userName")){  
+            	sql.and(new LikeCnd("user_name",jsonObject.get("value").getAsString()));
+            }else if (jsonObject.get("name").getAsString().equals("mobile")){  
+            	sql.and(new LikeCnd("mobile",jsonObject.get("value").getAsString()));
+            }else if (jsonObject.get("name").getAsString().equals("number")){  
+            	sql.and(new LikeCnd("number",jsonObject.get("value").getAsString()));
+            }
     	}
     	
     	logger.error(aoData);
     	SysUserEntity user = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
     	
-    	SQLWhere sql = new SQLWhere().orderBy(new DescSort("user_id"));
     	
+    	user.outPut("role");
     	List<SysUserEntity> list = user.getListVO(iDisplayStart, iDisplayLength, sql);
     	
     	
@@ -95,7 +105,15 @@ public class UserRest extends Result{
     		return error("超级用户不能删除");
     	}else{
     		try {
+				
+				List<SysUserRoleEntity>  list = new SysUserRoleEntity().setUserId(id).queryCustomCacheValue(0, null);
 				entity.delete();
+				if(list != null){
+					for(SysUserRoleEntity ur : list){
+						ur.delete();
+					}
+				}
+				
 				return success("删除成功");
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -138,7 +156,7 @@ public class UserRest extends Result{
     	
     	
     	if(PublicMethod.isEmptyValue(entity.getValid())){
-    		entity.setValid(1);
+    		entity.setValid(StaticBean.YES);
     	}
     	try{
     		
@@ -226,10 +244,10 @@ public class UserRest extends Result{
     	}
     	
     	entity.setPassword(MD5.encode(entity.getMobile().substring(5)));
-    	entity.setType(2);
+    	entity.setType(SysUserEntity.USER_GENERAL);
     	
     	if(PublicMethod.isEmptyValue(entity.getValid())){
-    		entity.setValid(1);
+    		entity.setValid(StaticBean.YES);
     	}
     	try{
     		entity.insert();

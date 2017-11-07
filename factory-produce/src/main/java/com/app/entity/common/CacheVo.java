@@ -9,8 +9,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
@@ -26,10 +28,12 @@ import com.app.dao.sql.SQLWhere;
 import com.app.dao.sql.cnd.EQCnd;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
+import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.annotations.Expose;
 import com.xx.util.string.Format;
 
 /**
@@ -45,11 +49,11 @@ public class CacheVo {
 	
 	private static final String FIXED_DEFINITION_TABLE_CACHE="table_cache";
 	
-	//private static final String FIXED_DEFINITION_NAME="name";
-	
 	private static final String FIXED_DEFINITION_CUSTOMCACHE="custom_cache_key";
 	
 	private static final String FIXED_DEFINITION_COLUMN_ORM="column_orm";
+	
+	private static final String FIXED_DEFINITION_OUTPUT="output";
 	
 	private static final String FIXED_DEFINITION_ID="id";
 	
@@ -61,12 +65,20 @@ public class CacheVo {
 	
 	private final static Map<Class<?>, Map<String, Object>> map = new HashMap<Class<?>, Map<String, Object>>();
 	
+	private transient Set<String> outPutSet = null;
+	
+	private transient Set<String> outPutIgnoreSet = null;
+	
 	 
 	private static ApplicationContext applicationContext = null;//启动类set入，调用下面set方法
 	
-	private String redisObj = null;
+	//@Expose(deserialize=false,serialize=false)
+	private transient  String redisObj = null;
 	
-	private String daoName;
+	//@Expose(deserialize=false,serialize=false)
+	private transient  String daoName;
+	
+	private transient  String[] outPutFields;
 
     public synchronized static void setApplicationContext(ApplicationContext context) {
     	if(applicationContext == null){
@@ -116,7 +128,6 @@ public class CacheVo {
 	private <T extends CacheVo> T newCacheVo(){
 		T vo = null;
 		try {
-			
 			vo = (T) this.getClass().getConstructor(String.class).newInstance(redisObj);
 		} catch (Exception e) {
 			logger.error("反映创建对象失败="+this.getClass(), e);
@@ -195,8 +206,6 @@ public class CacheVo {
 		try{
 			if(PublicMethod.isEmptyStr(tableName)){
 				Table t = this.getClass().getAnnotation(Table.class);
-				//Method met = t.annotationType().getDeclaredMethod(FIXED_DEFINITION_NAME);
-				//tableName =met.invoke(t).toString();
 				tableName = t.name();
 				setClassInfo(this.getClass(), FIXED_DEFINITION_TABLE,t.name());//数据表名称
 				TableCache tableCache = this.getClass().getAnnotation(TableCache.class);
@@ -240,6 +249,7 @@ public class CacheVo {
 	}
 	
 	
+	
 	/** 
 	 * 获取持久化字段字段
 	 * @return List<Field>
@@ -252,6 +262,8 @@ public class CacheVo {
 			obj= new ArrayList<Field>();
 			Field[] fields = this.getClass().getDeclaredFields();
 			Map<Integer,CustomCacheBean> customCacheMap = new HashMap<Integer,CustomCacheBean>();
+			
+			Map<Field,String> outPutMap = new HashMap<Field,String>();
 			for (Field field : fields) {
 				String columnName = "";
 				if (field.getAnnotation(Column.class) != null) {
@@ -261,6 +273,17 @@ public class CacheVo {
 					}
 					columnORM.put(field.getName(), columnName);//数据库字段名称
 					obj.add(field);//属性字段
+				}else{
+					if (field.getAnnotation(Expose.class) != null){
+						boolean bool = field.getAnnotation(Expose.class).deserialize();
+						if(bool){
+							String propertyName = field.getName();
+							String methodEnd = propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+							outPutMap.put(field, "get" + methodEnd);
+						}
+					}
+					
+					continue;
 				}
 				
 				
@@ -271,27 +294,55 @@ public class CacheVo {
 				
 				
 				if(field.getAnnotation(CustomCache.class) != null){//取自定义缓存key
-					int gorup = field.getAnnotation(CustomCache.class).gorup();
-					int sort = field.getAnnotation(CustomCache.class).sort();
-					boolean hashKey = field.getAnnotation(CustomCache.class).hashKey();
-					CustomCacheBean bean = null;
-					if(customCacheMap.containsKey(gorup)){
-						bean = customCacheMap.get(gorup);
-					}else{
-						bean = new CustomCacheBean(gorup);
+					CustomCache cc = field.getAnnotation(CustomCache.class);
+					int[] gorups = cc.gorup();
+					if(gorups != null && gorups.length > 0){
+						for(int i = 0,len = gorups.length;i<len;i++){
+							int gorup = gorups[i];
+							int sort = cc.sort()[0];
+							if(cc.sort().length > i)sort = cc.sort()[i];
+							boolean hashKey = cc.hashKey()[0];
+							if(cc.hashKey().length > i)hashKey = cc.hashKey()[i];
+							CustomCacheBean bean = null;
+							if(customCacheMap.containsKey(gorup)){
+								bean = customCacheMap.get(gorup);
+							}else{
+								bean = new CustomCacheBean(gorup);
+							}
+							
+							if(hashKey){
+								bean.setHashSetKey(field);
+							}else{
+								bean.setMap(sort, field);
+							}
+							customCacheMap.put(gorup, bean);
+						}
+						
 					}
-					bean.setMap(sort, field);
-					if(hashKey){
-						bean.setHashSetKey(field);
-					}
-					customCacheMap.put(gorup, bean);
+					
 				}
 			}
+			setClassInfo(this.getClass(),FIXED_DEFINITION_OUTPUT,outPutMap);
 			setClassInfo(this.getClass(),FIXED_DEFINITION_CUSTOMCACHE,customCacheMap);//取得
 			setClassInfo(this.getClass(),FIXED_DEFINITION_COLUMN_ORM,columnORM);
 			setClassInfo(this.getClass(),FIXED_DEFINITION_COLUMN,obj);
 			return obj;
 		}
+		return obj;
+	}
+	
+	/**
+	 * 获取自定义输出数据
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	private synchronized Map<Field,String> getOutPutMap() {
+		Map<Field,String> obj = (Map<Field,String>) getClassInfo(this.getClass(), FIXED_DEFINITION_OUTPUT);
+		if(obj == null){
+			getColumnField();
+			obj = (Map<Field,String>) getClassInfo(this.getClass(), FIXED_DEFINITION_OUTPUT);
+		}
+		
 		return obj;
 	}
 	
@@ -371,24 +422,6 @@ public class CacheVo {
 	 * @throws Exception
 	 */
 	public Object getIdValue() throws Exception {
-		
-		//Method f = (Method) getClassInfo(this.getClass(), FIXED_DEFINITION_ID);
-		//Field f = getIdName();
-		/*
-		Field f = (Field) getClassInfo(this.getClass(), FIXED_DEFINITION_ID);
-		if (PublicMethod.isEmptyStr(f)) {
-			Field[] fields = this.getClass().getDeclaredFields();
-			// List<Field> result = new ArrayList<Field>();
-			for (Field field : fields) {
-				if (field.getAnnotation(Id.class) != null) {
-					//f = this.getClass().getMethod(parGetName(field.getName()));
-					f = field;
-					setClassInfo(this.getClass(), FIXED_DEFINITION_ID, f);
-					//setClassInfo(this.getClass(), "idField", field);
-					break;
-				}
-			}
-		}*/
 		try {
 			
 			Object value = getFieldValue(getPKField());//f.invoke(this);
@@ -477,6 +510,10 @@ public class CacheVo {
 		return mapperVO(getJdbcDao().getList(sql.toString()));
 	}
 	
+	public List<Map<String, Object>> getListMap(String sql){
+		return getJdbcDao().getList(sql);
+	}
+	
 	/**
 	 * 查询 统计
 	 * @param where
@@ -487,7 +524,6 @@ public class CacheVo {
 		StringBuilder sql = new StringBuilder("select count(*) num from ").append(tableName.toString()).append(where.toString());
 		List<Map<String, Object>>  list = getJdbcDao().getList(sql.toString());
 		if(list != null && list.size() > 0){
-			//Map<String, Object> map = list.get(0);
 			return Long.parseLong(list.get(0).get("num").toString());
 		}
 		return 0;
@@ -576,17 +612,29 @@ public class CacheVo {
 	/**
 	 * 保存自定义缓存值 自定义key，id
 	 */
-	protected void saveCustomCacheValue(){
+	protected void saveCustomCacheValue(int type){
 		if(isChache()){
 			Map<Integer,CustomCacheBean> customCacheMap = getCustomCacheMap();
 			if(customCacheMap != null ){
-				for(Map.Entry<Integer, CustomCacheBean> mapBean : customCacheMap.entrySet()){
-					String key = mapBean.getValue().toString(this);
-					try {
-						new RedisAPI(redisObj).hSet(key, new String[]{mapBean.getValue().getHashSetKey(this)}, new String[]{getIdValue().toString()});
-						new RedisAPI(redisObj).expire(key, 60*60*24*30);
-					} catch (Exception e) {
-						logger.error("保存自定义缓存", e);
+				if(type == 0){
+					for(Map.Entry<Integer, CustomCacheBean> mapBean : customCacheMap.entrySet()){
+						String key = mapBean.getValue().toString(this);
+						try {
+							new RedisAPI(redisObj).hSet(key, new String[]{mapBean.getValue().getHashSetKey(this)}, new String[]{"0"});
+							new RedisAPI(redisObj).expire(key, 60*60*24*30);
+						} catch (Exception e) {
+							logger.error("保存自定义缓存", e);
+						}
+					}
+				}else{
+					for(Map.Entry<Integer, CustomCacheBean> mapBean : customCacheMap.entrySet()){
+						String key = mapBean.getValue().toString(this);
+						try {
+							new RedisAPI(redisObj).hSet(key, new String[]{mapBean.getValue().getHashSetKey(this)}, new String[]{getIdValue().toString()});
+							new RedisAPI(redisObj).expire(key, 60*60*24*30);
+						} catch (Exception e) {
+							logger.error("保存自定义缓存", e);
+						}
 					}
 				}
 			}
@@ -596,9 +644,12 @@ public class CacheVo {
 	/**
 	 * 将实体持久化到缓存
 	 */
-	public void insertNosql() {
+	public void insertNosql(int type) {
 		if (isChache()) {
-			String value = new GsonBuilder().setDateFormat(FIXED_DEFINITION_TIME_FORMAT).create().toJson(this);
+			String value = "0";
+			if(type != 0){
+				value = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat(FIXED_DEFINITION_TIME_FORMAT).create().toJson(this);
+			}
 			new RedisAPI(redisObj).put(getEntityCacheKeyName(), value,60*60*24*30);//保存一个月
 			//saveCustomCacheValue();//保存自定义缓存数据
 		}
@@ -615,15 +666,19 @@ public class CacheVo {
 			if(PublicMethod.isEmptyStr(result)){
 				CacheVo vo = getVoFromDB();//返回的是this
 				if(vo != null){
-					vo.insertNosql();//插入缓存
+					vo.insertNosql(1);//插入缓存
 					return vo;
 				}else{
+					insertNosql(0);//插入缓存
 					return null;
 				}
 				
 			}else{
-				return setVo(new JsonParser().parse(result).getAsJsonObject());//返回的是this
-				//return  new Gson().fromJson(result, this);
+				if(result.equals("0")){
+					return null;
+				}else{
+					return setVo(new JsonParser().parse(result).getAsJsonObject());//返回的是this
+				}
 			}
 		}else{//不使用缓存
 			return getVoFromDB();//返回的是this
@@ -650,6 +705,38 @@ public class CacheVo {
 	}
 	
 	
+	public void outPut(String ...fieldName){
+		if(fieldName != null && fieldName.length > 0){
+			this.outPutFields = fieldName;
+			if(outPutSet == null){
+				outPutSet = new HashSet<String>();
+			}
+			for(String name : fieldName){
+				if(!PublicMethod.isEmptyStr(name)){
+					outPutSet.add(name);
+				}
+				
+			}
+		}
+		
+	}
+	
+	public void outPutIgnore(String ...fieldName){
+		if(fieldName != null && fieldName.length > 0){
+			if(outPutIgnoreSet == null){
+				outPutIgnoreSet = new HashSet<String>();
+			}
+			for(String name : fieldName){
+				if(!PublicMethod.isEmptyStr(name)){
+					outPutIgnoreSet.add(name);
+				}
+				
+			}
+		}
+		
+		
+		
+	}
 	
 	/**
 	 * 将数据库的map对象转为实体对像
@@ -661,17 +748,33 @@ public class CacheVo {
 		if(listMap != null && listMap.size() > 0){
 			List<Field>  list = getColumnField();
 			Map<String,String> columnORM = getCustomORM();
+			Map<Field,String> out = getOutPutMap();
 			for(Map<String,Object> mapVo : listMap){
 				if(mapVo != null && mapVo.size() > 0){
 					try {
 						T vo = newCacheVo();
+						vo.outPut(this.outPutFields);
 						for (Field field : list) {
+							if(outPutIgnoreSet != null){//忽略输出的字段
+								if(outPutIgnoreSet.contains(field.getName()) || outPutIgnoreSet.contains(columnORM.get(field.getName()))){
+									continue;
+								}
+							}
 							
 							if(mapVo.containsKey(columnORM.get(field.getName()))){
 								vo.setFieldValue(field,mapVo.get(columnORM.get(field.getName())));
 							}else{
 								vo.setFieldValue(field," ");
 							}
+						}
+						
+						if(outPutSet != null && outPutSet.size() > 0 && out != null && out.size() > 0){
+							for(Map.Entry<Field, String> kv : out.entrySet()){
+								if(outPutSet.contains(kv.getKey().getName())){
+									vo.getClass().getMethod(kv.getValue()).invoke(vo);
+								}
+							}
+							
 						}
 						listVO.add(vo);
 					} catch (Exception e) {
@@ -734,12 +837,12 @@ public class CacheVo {
 	 * @param value 对应的hashset的key
 	 * @return
 	 */
-	public List<List<CacheVo>> queryAllCustomCacheValue(){
-		List<List<CacheVo>> listVO = new ArrayList<List<CacheVo>>();
+	public <T extends CacheVo> List<List<T>> queryAllCustomCacheValue(){
+		List<List<T>> listVO = new ArrayList<List<T>>();
 		Map<Integer,CustomCacheBean> customCacheMap = getCustomCacheMap();
 		for(Map.Entry<Integer, CustomCacheBean> kv : customCacheMap.entrySet()){
 			CustomCacheBean bean = kv.getValue();
-			List<CacheVo> list = queryCustomCacheValue(kv.getKey(),bean.getHashSetKey(this));
+			List<T> list = queryCustomCacheValue(kv.getKey(),bean.getHashSetKey(this));
 			if(list != null){
 				listVO.add(list);
 			}
@@ -785,25 +888,36 @@ public class CacheVo {
 					for(Field field : bean.getField())
 						sqlWhere.and(new EQCnd(columnORM.get(field.getName()), getFieldValue(field)));
 					List<T> list = getListVO(0,10000,sqlWhere);
-					for(T vo : list){
-						vo.saveCustomCacheValue();//保存自定义缓存值
-						if(!PublicMethod.isEmptyStr(value)){
-							if(bean.getHashSetKey(vo).toString().equals(value)){
+					if(list != null && list.size() > 0){
+						for(T vo : list){
+							vo.saveCustomCacheValue(1);//保存自定义缓存值
+							if(!PublicMethod.isEmptyStr(value)){
+								if(bean.getHashSetKey(vo).toString().equals(value)){
+									listVO.add(vo);
+								}
+							}else{
 								listVO.add(vo);
 							}
-						}else{
-							listVO.add(vo);
 						}
+					}else{
+						new RedisAPI(redisObj).hSet(bean.toString(this), new String[]{"id"}, new String[]{"0"});
+						new RedisAPI(redisObj).expire(bean.toString(this), 60*60*24*30);
 					}
+					
 					return listVO;
 				}else{
+					if(mapValue.containsKey("id") && mapValue.get("id").equals("0")){
+						return listVO;
+					}
 					if(PublicMethod.isEmptyStr(value)){
 						for(Map.Entry<String, String> kv : mapValue.entrySet()){
 							try {
 								T vo = newCacheVo();
 								vo.setPKValue(kv.getValue());
 								vo.loadVo();
-								listVO.add(vo);
+								if(vo != null){
+									listVO.add(vo);
+								}
 							} catch (Exception e) {
 								logger.error("查询自定义缓存", e);
 								e.printStackTrace();
@@ -815,7 +929,9 @@ public class CacheVo {
 							T vo = newCacheVo();
 							vo.setPKValue(mapValue.get(value));
 							vo.loadVo();
-							listVO.add( vo);
+							if(vo != null){
+								listVO.add(vo);
+							}
 							return listVO;
 						}
 					}
@@ -846,7 +962,7 @@ public class CacheVo {
 	 * @param group 自定义缓存组
 	 * @return
 	 */
-	public CacheVo queryCustomCacheVo(int group){
+	public <T extends CacheVo> T queryCustomCacheVo(int group){
 		return queryCustomCacheVo(group,null);
 	}
 	
@@ -956,13 +1072,30 @@ public class CacheVo {
 				e.printStackTrace();
 			} 
 		}
+		
+		Map<Field,String> out = getOutPutMap();
+		if(outPutSet != null && outPutSet.size() > 0 && out != null && out.size() > 0){
+			for(Map.Entry<Field, String> kv : out.entrySet()){
+				if(outPutSet.contains(kv.getKey().getName())){
+					try {
+						Object obj = this.getClass().getMethod(kv.getValue()).invoke(this);
+						jo.addProperty(kv.getKey().getName(), String.valueOf(obj));
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} 
+				}
+			}
+			
+		}
+		logger.error("toString="+jo.toString());
 		return jo.toString();
 	}
 	
 	
 	
 	/**
-	 * 删除自定义缓存
+	 * 
 	 * @return
 	 */
 	public long insert() throws Exception{
@@ -1013,6 +1146,7 @@ public class CacheVo {
 				if(column.equals("create_time") || column.equals("operator_time")){
 					listParam.add(date);
 				}else{
+					logger.error(field.getName()+"============"+getFieldValue(field));
 					listParam.add(getFieldValue(field));
 				}
 				
@@ -1023,7 +1157,7 @@ public class CacheVo {
 		long id = getJdbcDao().insert(sql.toString(), listParam.toArray());
 		logger.error("---------------id="+id);
 		setPKValue(String.valueOf(id));
-		insertNosql();//保存缓存数据
+		insertNosql(1);//保存缓存数据
 		vo.deleteCustomCacheAll();//删除自定义缓存
 		return id;
 	}
@@ -1087,7 +1221,7 @@ public class CacheVo {
 			if(value == null){
 				return "''";
 			}
-			return "'"+value+"'";
+			return "'"+value.toString().replaceAll("'", "\\\\\'").replaceAll("\"", "\\\\\"")+"'";
 		}
 	}
 	
@@ -1111,7 +1245,7 @@ public class CacheVo {
 	 */
 	public int  deleteLinkChild(String parentName) throws Exception{
 		
-		List<CacheVo> list = getListVO(0, 1000, new SQLWhere(new EQCnd(parentName, getIdValue())));
+		List<CacheVo> list = getListVO(0, 10000, new SQLWhere(new EQCnd(parentName, getIdValue())));
     	if(list != null && list.size() > 0){
     		for(CacheVo vo : list){
         		try {
@@ -1212,7 +1346,7 @@ public class CacheVo {
 		//param[len] = getFieldValue(getPKField());
 		listParam.add(getFieldValue(getPKField()));
 		int index = getJdbcDao().update(sql.toString(), listParam.toArray());
-		insertNosql();//保存缓存数据
+		insertNosql(1);//保存缓存数据
 		//deleteCustomCacheAll();//删除自定义缓存
 		vo.deleteCustomCacheAll();
 		return index;
