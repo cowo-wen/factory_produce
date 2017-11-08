@@ -36,6 +36,7 @@ public class SysRoleEntity extends CacheVo implements Serializable {
 	 */
 	private static final long serialVersionUID = 2744040054922288267L;
 
+	public static final String ROLE_ID = "role_id";
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column
@@ -44,17 +45,20 @@ public class SysRoleEntity extends CacheVo implements Serializable {
 	/**
 	 * 角色名称
 	 */
+	public static final String ROLE_NAME = "role_name";
 	@Column
 	private String roleName;
 
 	/**
 	 * 父id
 	 */
+	public static final String PARENT_ID = "parent_id";
 	@Column
 	private Long parentId;
 	/**
 	 * 角色编码
 	 */
+	public static final String ROLE_CODE = "role_code";
 	@Column
 	@CustomCache(sort = 0)
 	private String roleCode;
@@ -63,30 +67,35 @@ public class SysRoleEntity extends CacheVo implements Serializable {
 	 * 根接点查询所有子接点使用
 	 * 连接码
 	 */
+	public static final String LINK_CODE = "link_code";
 	@Column
 	private String linkCode;
 	
 	/**
 	 * 是否有效 1是 2否
 	 */
+	public static final String VALID = "valid";
 	@Column
     private Integer valid;
 	
 	/**
 	 * 备注
 	 */
+	public static final String REMARK = "remark";
 	@Column
 	private String remark;
 	
 	/**
 	 * pc端浏览主页
 	 */
+	public static final String pc_index = "pc_index";
 	@Column
 	private String pcIndex;
 	
 	/**
 	 * 微信端浏览主页
 	 */
+	public static final String WX_INDEX = "wx_index";
 	@Column
 	private String wxIndex;
 

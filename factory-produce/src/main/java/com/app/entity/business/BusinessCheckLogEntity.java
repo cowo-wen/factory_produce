@@ -36,7 +36,7 @@ public class BusinessCheckLogEntity extends CacheVo  implements Serializable
 	 */
 	private static final long serialVersionUID = -5070696130620425878L;
 	
-	
+	public static final String CHECK_LOG_ID = "check_log_id";
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
@@ -45,6 +45,7 @@ public class BusinessCheckLogEntity extends CacheVo  implements Serializable
     /**
 	 * 审核表类型id
 	 */
+    public static final String TYPE = "type";
     @Column
     private Integer type;
     
@@ -52,6 +53,7 @@ public class BusinessCheckLogEntity extends CacheVo  implements Serializable
     /**
 	 * 数据id
 	 */
+    public static final String DATA_ID = "data_id";
     @Column
     private Long dataId;
     
@@ -59,6 +61,7 @@ public class BusinessCheckLogEntity extends CacheVo  implements Serializable
     /**
      * 审核状态 1已审核，2未审核，3审核不通过
      */
+    public static final String CHECK_STATUS = "check_status";
     @Column
     private Integer checkStatus;
     
@@ -66,12 +69,14 @@ public class BusinessCheckLogEntity extends CacheVo  implements Serializable
     /**
      * 审核人
      */
+    public static final String CHECK_USER = "check_user";
     @Column
     private Long checkUser;
     
     /**
      * 审核时间
      */
+    public static final String CHECK_TIME = "check_time";
     @Column
     private Date checkTime;
     
@@ -85,12 +90,14 @@ public class BusinessCheckLogEntity extends CacheVo  implements Serializable
     /**
      * 数量
      */
+    public static final String NUMBER = "number";
     @Column
     private Long number;
     
     /**
      * 备注
      */
+    public static final String REMARK = "remark";
     @Column
     private String remark;
     

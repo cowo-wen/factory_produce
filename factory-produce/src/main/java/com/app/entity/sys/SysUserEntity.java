@@ -42,11 +42,19 @@ public class SysUserEntity extends CacheVo  implements Serializable
      * 管理员类型
      */
     public static final int USER_ADMIN = 1;
+    
     /**
      * 一般类型
      */
     public static final int USER_GENERAL = 2;
+    
+    /**
+     * 管理员登录名称
+     */
+    public static final String ADMIN_USER_NAME = "admin";
+    
 	
+    public static final String USER_ID = "user_id";
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
@@ -55,28 +63,37 @@ public class SysUserEntity extends CacheVo  implements Serializable
     /**
      * 用户类型1系统管理员，2普通用户
      */
+    public static final String TYPE = "type";
     @Column
     private Integer type;
     
+    
+    public static final String VALID = "valid";
     @Column
     private Integer valid;
 
+    public static final String USER_NAME = "user_name";
     @Column
     private String userName;
-    
+
+    public static final String PASSWORD = "password";
     @Column
     private String password;
-    
+
+    public static final String MOBILE = "mobile";
     @Column
     private String mobile;
-    
+
+    public static final String NUMBER = "number";
     @Column
     @CustomCache(sort = 0,gorup={1})
     private String number;
-    
+
+    public static final String IDCARD = "idcard";
     @Column
     private String idcard;
-    
+
+    public static final String LOGIN_NAME = "login_name";
     @Column
     @CustomCache(sort = 0)
     private String loginName;

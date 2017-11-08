@@ -33,15 +33,18 @@ public class SysUserRoleEntity extends CacheVo implements Serializable {
      */
 	private static final long serialVersionUID = 5584285939754090250L;
 
+	public static final String ID = "id";
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column
 	private Long id;
 	
+	public static final String USER_ID = "user_id";
 	@Column
 	@CustomCache(sort = 0)
 	private Long userId;
 
+	public static final String ROLE_ID = "role_id";
 	@Column
 	@CustomCache(hashKey=true, sort = 1)
 	private Long roleId;

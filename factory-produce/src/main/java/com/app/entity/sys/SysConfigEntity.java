@@ -15,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.app.entity.common.CacheVo;
+import com.app.entity.common.TableCache;
 
 /**
  * 功能说明：系统用户表
@@ -23,29 +24,37 @@ import com.app.entity.common.CacheVo;
  */
 @Entity
 @Table(name = "t_sys_config")
+@TableCache(isCache=true)
 public class SysConfigEntity extends CacheVo  implements Serializable
 {
 
 	
-    /**
+
+	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -2638845486880415208L;
-
+	private static final long serialVersionUID = -5226339948182555979L;
+	
+	
+	public static final String ID = "id";
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private Long id;
 
+	public static final String GROUP_TYPE = "group_type";
     @Column
     private String groupType;
     
+    public static final String NAME = "name";
     @Column
     private String name;
     
+    public static final String FILED_NAME = "filed_name";
     @Column
-    private String Filed;
+    private String filedName;
     
+    public static final String VALUE_CLASS = "value_class";
     @Column
     private String valueClass;
     
@@ -95,12 +104,14 @@ public class SysConfigEntity extends CacheVo  implements Serializable
 		this.name = name;
 	}
 
-	public String getFiled() {
-		return Filed;
+	
+
+	public String getFiledName() {
+		return filedName;
 	}
 
-	public void setFiled(String filed) {
-		Filed = filed;
+	public void setFiledName(String filedName) {
+		this.filedName = filedName;
 	}
 
 	public String getValueClass() {

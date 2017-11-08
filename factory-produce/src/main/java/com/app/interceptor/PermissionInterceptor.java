@@ -53,7 +53,7 @@ public class PermissionInterceptor implements HandlerInterceptor
     	
     	long time = System.currentTimeMillis();
         try{
-        	String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(request.getSession().getId()+":userinfo");
+        	String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:"+request.getSession().getId()+":userinfo");
             if(PublicMethod.isEmptyStr(value)){
             	request.setCharacterEncoding("UTF-8");
                 response.setContentType("text/html;charset=utf-8");
@@ -70,7 +70,7 @@ public class PermissionInterceptor implements HandlerInterceptor
                         response.setContentType("text/html;charset=utf-8");
                         response.getWriter().print("参数不全");
             		}else{
-            			String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(request.getSession().getId()+":applicationCode:"+applicationCode);
+            			String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:"+request.getSession().getId()+":application_code:"+applicationCode);
             			if(PublicMethod.isEmptyStr(url)){
             				request.setCharacterEncoding("UTF-8");
                             response.setContentType("text/html;charset=utf-8");

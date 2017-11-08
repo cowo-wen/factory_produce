@@ -45,6 +45,10 @@ import com.xx.util.string.Format;
 public class CacheVo {
 	public static Log logger = LogFactory.getLog(CacheVo.class);
 	
+	private static final String ID="id";
+	
+	private static final String ZERO="0";
+	
 	private static final String FIXED_DEFINITION_TABLE="table";
 	
 	private static final String FIXED_DEFINITION_TABLE_CACHE="table_cache";
@@ -55,7 +59,7 @@ public class CacheVo {
 	
 	private static final String FIXED_DEFINITION_OUTPUT="output";
 	
-	private static final String FIXED_DEFINITION_ID="id";
+	private static final String FIXED_DEFINITION_ID=ID;
 	
 	private static final String FIXED_DEFINITION_COLUMN="column";
 	
@@ -79,8 +83,19 @@ public class CacheVo {
 	private transient  String daoName;
 	
 	private transient  String[] outPutFields;
+	
+	
+	public static final String CREATE_TIME = "create_time";
+	
+	public static final String OPERATOR_TIME = "operator_time";
+	
+	
+	
+	
 
-    public synchronized static void setApplicationContext(ApplicationContext context) {
+    
+
+	public synchronized static void setApplicationContext(ApplicationContext context) {
     	if(applicationContext == null){
     		applicationContext = context;
     	}
@@ -620,7 +635,7 @@ public class CacheVo {
 					for(Map.Entry<Integer, CustomCacheBean> mapBean : customCacheMap.entrySet()){
 						String key = mapBean.getValue().toString(this);
 						try {
-							new RedisAPI(redisObj).hSet(key, new String[]{mapBean.getValue().getHashSetKey(this)}, new String[]{"0"});
+							new RedisAPI(redisObj).hSet(key, new String[]{mapBean.getValue().getHashSetKey(this)}, new String[]{ZERO});
 							new RedisAPI(redisObj).expire(key, 60*60*24*30);
 						} catch (Exception e) {
 							logger.error("保存自定义缓存", e);
@@ -646,8 +661,9 @@ public class CacheVo {
 	 */
 	public void insertNosql(int type) {
 		if (isChache()) {
-			String value = "0";
+			String value = ZERO;
 			if(type != 0){
+				logger.error("插入缓存数据:"+toString());
 				value = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat(FIXED_DEFINITION_TIME_FORMAT).create().toJson(this);
 			}
 			new RedisAPI(redisObj).put(getEntityCacheKeyName(), value,60*60*24*30);//保存一个月
@@ -674,7 +690,7 @@ public class CacheVo {
 				}
 				
 			}else{
-				if(result.equals("0")){
+				if(result.equals(ZERO)){
 					return null;
 				}else{
 					return setVo(new JsonParser().parse(result).getAsJsonObject());//返回的是this
@@ -693,14 +709,27 @@ public class CacheVo {
 	public CacheVo parse(JsonObject jo){
 		//JsonObject jo = new JsonParser().parse(json).getAsJsonObject();
 		String idName = getPKField().getName();
-		if(jo.has(idName)  ){
+		if(jo.has(idName)){
 			String idValue = jo.get(idName).getAsString();
 			if(!PublicMethod.isEmptyStr(idValue) && Format.isNumeric(idValue)){
-				setPKValue(jo.get(idName).getAsString());
+				setPKValue(idValue);
 				loadVo();
 			}
+		}else{
+			Map<String,String> map =getCustomORM();
+			if(map.containsKey(idName)){
+				if(jo.has(map.get(idName))){
+					String idValue = jo.get(map.get(idName)).getAsString();
+					if(!PublicMethod.isEmptyStr(idValue) && Format.isNumeric(idValue)){
+						setPKValue(idValue);
+						loadVo();
+					}
+				}
+			}
 		}
+		logger.error("------修改前："+toString());
 		setVo(jo);
+		logger.error("------修改后："+toString());
 		return this;
 	}
 	
@@ -854,6 +883,15 @@ public class CacheVo {
 	/**
 	 * 查找自定义缓存数据
 	 * @param group 自定义缓存组
+	 * @return
+	 */
+	public <T extends CacheVo> List<T> queryCustomCacheValue(int group){
+		return queryCustomCacheValue(group,null);
+	}
+	
+	/**
+	 * 查找自定义缓存数据
+	 * @param group 自定义缓存组
 	 * @param value 对应的hashset的key
 	 * @return
 	 */
@@ -900,13 +938,13 @@ public class CacheVo {
 							}
 						}
 					}else{
-						new RedisAPI(redisObj).hSet(bean.toString(this), new String[]{"id"}, new String[]{"0"});
+						new RedisAPI(redisObj).hSet(bean.toString(this), new String[]{ID}, new String[]{ZERO});
 						new RedisAPI(redisObj).expire(bean.toString(this), 60*60*24*30);
 					}
 					
 					return listVO;
 				}else{
-					if(mapValue.containsKey("id") && mapValue.get("id").equals("0")){
+					if(mapValue.containsKey(ID) && mapValue.get(ID).equals(ZERO)){
 						return listVO;
 					}
 					if(PublicMethod.isEmptyStr(value)){
@@ -1058,8 +1096,11 @@ public class CacheVo {
 		for(Field field : list){
 			try {
 				Object value = getFieldValue(field);
-				if(value  == null)
+				logger.error("---------------------"+field.getName()+"="+value);
+				if(value  == null){
 					value = "";
+					continue;
+				}
 				if(field.getType().getName().equals(java.sql.Date.class.getName())){
 					jo.addProperty(columnORM.get(field.getName()), PublicMethod.formatDateStr((java.sql.Date)value, FIXED_DEFINITION_TIME_FORMAT));
 				} else if(field.getType().getName().equals(java.util.Date.class.getName())){
@@ -1127,8 +1168,8 @@ public class CacheVo {
 				
 				if(bool){
 					columnSql.append(" , ").append(column);
-					if(column.equals("create_time") || column.equals("operator_time")){
-						signSql.append(" ,'").append(PublicMethod.formatDateStr(date, "yyyy-MM-dd HH:mm:ss")).append("'");
+					if(column.equals(CREATE_TIME) || column.equals(OPERATOR_TIME)){
+						signSql.append(" ,'").append(PublicMethod.formatDateStr(date)).append("'");
 					}else{
 						signSql.append(" ,").append(getColumnValue(field));
 					}
@@ -1136,14 +1177,15 @@ public class CacheVo {
 				}else{
 					bool = true;
 					columnSql.append(column);
-					if(column.equals("create_time") || column.equals("operator_time")){
-						signSql.append("'").append(PublicMethod.formatDateStr(date, "yyyy-MM-dd HH:mm:ss")).append("'");
+					if(column.equals(CREATE_TIME) || column.equals(OPERATOR_TIME)){
+						signSql.append("'").append(PublicMethod.formatDateStr(date)).append("'");
 					}else{
 						signSql.append(getColumnValue(field));
 					}
 				}
 				
-				if(column.equals("create_time") || column.equals("operator_time")){
+				if(column.equals(CREATE_TIME) || column.equals(OPERATOR_TIME)){
+					setFieldValue(field, date);
 					listParam.add(date);
 				}else{
 					logger.error(field.getName()+"============"+getFieldValue(field));
@@ -1155,7 +1197,6 @@ public class CacheVo {
 		sql.append(columnSql).append(" ) VALUES (").append(signSql).append(" )");
 		logger.error("--------------insertSql="+sql.toString());
 		long id = getJdbcDao().insert(sql.toString(), listParam.toArray());
-		logger.error("---------------id="+id);
 		setPKValue(String.valueOf(id));
 		insertNosql(1);//保存缓存数据
 		vo.deleteCustomCacheAll();//删除自定义缓存
@@ -1167,14 +1208,14 @@ public class CacheVo {
 		Object value = getFieldValue(field);
 		if(field.getType().equals(Integer.class) || typeName.equalsIgnoreCase("int")){
 			if(value == null){
-				return "0";
+				return ZERO;
 			}else{
 				return value+"";
 			}
 			
 		}else if(field.getType().equals(Long.class) || typeName.equalsIgnoreCase("long")){
 			if(value == null){
-				return "0";
+				return ZERO;
 			}else{
 				return value+"";
 			}
@@ -1187,14 +1228,14 @@ public class CacheVo {
 			
 		}else if(field.getType().equals(Double.class) || typeName.equalsIgnoreCase("double")){
 			if(value == null){
-				return "0";
+				return ZERO;
 			}else{
 				return value+"";
 			}
 			
 		}else if(field.getType().equals(Float.class) || typeName.equalsIgnoreCase("float")){
 			if(value == null){
-				return "0";
+				return ZERO;
 			}else{
 				return value+"";
 			}
@@ -1249,8 +1290,8 @@ public class CacheVo {
     	if(list != null && list.size() > 0){
     		for(CacheVo vo : list){
         		try {
-        			StringBuilder sql = new StringBuilder("delete FROM ").append(getTableName());
-        			sql.append(" where ").append(getCustomORM().get(getPKField().getName())).append(" = ").append(getIdValue().toString());
+        			StringBuilder sql = new StringBuilder("DELETE FROM ").append(getTableName());
+        			sql.append(" WHERE ").append(getCustomORM().get(getPKField().getName())).append(" = ").append(getIdValue().toString());
         			getJdbcDao().update(sql.toString(),null);
         			deleteNoSql();
         			deleteCustomCacheAll();//删除自定义缓存
@@ -1290,8 +1331,8 @@ public class CacheVo {
 				}
 			}
 		}
-		StringBuilder sql = new StringBuilder(" update ");
-		sql.append(getTableName()).append(" set ");
+		StringBuilder sql = new StringBuilder(" UPDATE ");
+		sql.append(getTableName()).append(" SET ");
 		List<Field> listField = getColumnField();
 		int len = listField.size();
 		//Object [] param = new Object[len+1];
@@ -1328,7 +1369,9 @@ public class CacheVo {
 						bool = true;
 						columnSql.append(column).append(" = ? ");
 					}
-					listParam.add(new Date());
+					Date date = new Date();
+					setFieldValue(field, date);
+					listParam.add(date);
 				}else{
 					if(bool){
 						columnSql.append(",").append(column).append(" = ? ");
@@ -1342,7 +1385,7 @@ public class CacheVo {
 			}
 			sql.append(columnSql);
 		}
-		sql.append( " where ").append(columnORM.get(getPKField().getName())).append(" = ?");
+		sql.append( " WHERE ").append(columnORM.get(getPKField().getName())).append(" = ?");
 		//param[len] = getFieldValue(getPKField());
 		listParam.add(getFieldValue(getPKField()));
 		int index = getJdbcDao().update(sql.toString(), listParam.toArray());

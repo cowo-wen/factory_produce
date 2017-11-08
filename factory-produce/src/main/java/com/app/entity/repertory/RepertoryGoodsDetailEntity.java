@@ -50,6 +50,8 @@ public class RepertoryGoodsDetailEntity extends CacheVo  implements Serializable
      */
     public static final int GOOD_TYPE_SEMI_PRODUCTION = 2;
 	
+    
+    public static final String GOODS_DETAIL_ID = "goods_detail_id";
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
@@ -58,6 +60,7 @@ public class RepertoryGoodsDetailEntity extends CacheVo  implements Serializable
     /**
 	 * 批次id
 	 */
+    public static final String GOODS_BATCH_ID = "goods_batch_id";
     @Column
     private Long goodsBatchId;
     
@@ -65,6 +68,7 @@ public class RepertoryGoodsDetailEntity extends CacheVo  implements Serializable
     /**
      * 审核状态 1已审核，2未审核，3审核不通过
      */
+    public static final String CHECK_STATUS = "check_status";
     @Column
     private Integer checkStatus;
     
@@ -72,24 +76,28 @@ public class RepertoryGoodsDetailEntity extends CacheVo  implements Serializable
     /**
      * 审核人
      */
+    public static final String CHECK_USER = "check_user";
     @Column
     private Long checkUser;
     
     /**
      * 审核时间
      */
+    public static final String CHECK_TIME = "check_time";
     @Column
     private Date checkTime;
     
     /**
      * 产品类型：冲单，出货，入货
      */
+    public static final String TYPE = "type";
     @Column
     private Integer type;
     
     /**
      * 数量
      */
+    public static final String NUMBER = "number";
     @Column
     private Long number;
     

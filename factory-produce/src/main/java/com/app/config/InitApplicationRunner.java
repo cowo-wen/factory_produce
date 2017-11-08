@@ -38,14 +38,15 @@ public class InitApplicationRunner implements ApplicationRunner {
 					e1.printStackTrace();
 				}
             	SysUserEntity user = new SysUserEntity();
-        		user.setLoginName("admin");
+        		user.setLoginName(SysUserEntity.ADMIN_USER_NAME);
         		user.setType(SysUserEntity.USER_ADMIN);
         		user.setUserName("超级管理员");
         		user.setPassword(MD5.encode("123456"));
         		user.setValid(StaticBean.YES);
+        		user.setNumber("0");
         		try{
         			user.insert();
-        			//sysUserService.save(user);
+        			
         		}catch(Exception e){
         			logger.error("新增"+user.getLoginName()+"用户出错", e);
         		}
@@ -59,6 +60,7 @@ public class InitApplicationRunner implements ApplicationRunner {
         		role.setRoleName("超级管理员");
         		try{
         			role.insert();
+        			
         			//sysUserService.save(user);
         		}catch(Exception e){
         			logger.error("新增"+role.getRoleName()+"角色出错", e);

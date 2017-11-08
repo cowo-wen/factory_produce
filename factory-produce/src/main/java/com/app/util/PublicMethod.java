@@ -459,6 +459,16 @@ public class PublicMethod
         c.setTimeZone(t);
         return c.getTime();
     }
+    
+    /**
+     * 格式化时间 默认yyyy-MM-dd HH:mm:ss
+     * 
+     * @return 返回Date
+     */
+    public synchronized static String formatDateStr(Date date)
+    {
+       return formatDateStr(date,null);
+    }
 
     /**
      * 格式化时间 默认yyyy-MM-dd HH:mm:ss
@@ -467,7 +477,7 @@ public class PublicMethod
      *            格式化形式 为null 使用默认样式
      * @return 返回Date
      */
-    public static String formatDateStr(Date date, String mat)
+    public synchronized static String formatDateStr(Date date, String mat)
     {
         String str = "yyyy-MM-dd HH:mm:ss";
         if (mat != null)

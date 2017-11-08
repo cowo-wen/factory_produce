@@ -40,44 +40,51 @@ public class SysLogEntity extends CacheVo implements Serializable
 	public static final int TYPE_FAIL = 2;
 	
 
+	public static final String LOG_ID = "log_id";
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name="log_id")
+	@Column(name=LOG_ID)
     private Long logId;
 
 	/**
 	 * 应用id
 	 */
-	@Column(name="application_id")
+	public static final String APPLICATION_ID = "application_id";
+	@Column(name=APPLICATION_ID)
     private long applicationId;
 
 	/**
 	 * 数据id
 	 */
-	@Column(name="data_id")
+	public static final String DATA_ID = "data_id";
+	@Column(name=DATA_ID)
     private long dataId;
     
 	/**
 	 * 消息
 	 */
-	@Column(name="message")
+	public static final String MESSAGE = "message";
+	@Column(name=MESSAGE)
     private String message;
     
 	/**
 	 * ip
 	 */
+	public static final String IP = "ip";
 	@Column
     private String ip;
     
 	/**
 	 * 类型
 	 */
+	public static final String TYPE = "type";
 	@Column
     private int type;
     
 	/**
 	 * 用户
 	 */
+	public static final String USER_ID = "user_id";
 	@Column
     private long userId;
     

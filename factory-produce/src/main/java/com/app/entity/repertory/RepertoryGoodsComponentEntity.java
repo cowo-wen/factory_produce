@@ -37,16 +37,17 @@ public class RepertoryGoodsComponentEntity extends CacheVo  implements Serializa
 	private static final long serialVersionUID = 6179414446517649112L;
 
 
-
+	public static final String GOODS_COMPONENT_ID = "goods_component_id";
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
-    private Long GoodsComponentId;
+    private Long goodsComponentId;
     
     
    /**
     * 产品id
     */
+	public static final String GOODS_ID = "goods_id";
     @Column
     @CustomCache(sort = 0)
     private Long goodsId;
@@ -54,6 +55,7 @@ public class RepertoryGoodsComponentEntity extends CacheVo  implements Serializa
     /**
      * 零件的产品id
      */
+    public static final String COMPONENT_ID = "component_id";
     @Column
     private Long componentId;
     
@@ -61,6 +63,7 @@ public class RepertoryGoodsComponentEntity extends CacheVo  implements Serializa
     /**
      * 需要零件数量
      */
+    public static final String NUMBER = "number";
     @Column
     private Integer number;
    
@@ -97,15 +100,30 @@ public class RepertoryGoodsComponentEntity extends CacheVo  implements Serializa
 
 
 
+
+
+
 	public Long getGoodsComponentId() {
-		return GoodsComponentId;
+		return goodsComponentId;
 	}
 
 
 
 	public RepertoryGoodsComponentEntity setGoodsComponentId(Long goodsComponentId) {
-		GoodsComponentId = goodsComponentId;
+		this.goodsComponentId = goodsComponentId;
 		return this;
+	}
+
+
+
+	public Long getComponentId() {
+		return componentId;
+	}
+
+
+
+	public void setComponentId(Long componentId) {
+		this.componentId = componentId;
 	}
 
 

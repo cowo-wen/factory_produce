@@ -39,6 +39,7 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Serializable
 	/**
 	 * 批次id
 	 */
+	public static final String GOODS_BATCH_ID = "goods_batch_id";
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
@@ -47,6 +48,7 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Serializable
 	/**
 	 * 批次代码
 	 */
+	public static final String GOODS_BATCH_CODE = "goods_batch_code";
     @Column
     @CustomCache(sort = 0,hashKey={true,false},gorup={0,1})
     private String goodsBatchCode;
@@ -55,6 +57,7 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Serializable
     /**
      * 产品id
      */
+    public static final String GOODS_ID = "goods_id";
     @Column
     @CustomCache(sort = 0)
     private Long goodsId;
@@ -63,6 +66,7 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Serializable
     /**
      * 是否有效，1表示有效，2表示无效  当number为1时即无效
      */
+    public static final String VALID = "valid";
     @Column
     @CustomCache(sort = 1,gorup={0,1})
     private Integer valid;
@@ -70,11 +74,16 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Serializable
     /**
      * 数量
      */
+    public static final String NUMBER = "number";
     @Column
     private Integer number;
     
     
+    @Column
+    private Date createTime;
     
+    @Column
+    private Date operatorTime;
    
     
     public Long getGoodsBatchId() {
@@ -134,11 +143,7 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Serializable
 		return this;
 	}
 
-	@Column
-    private Date createTime;
-    
-    @Column
-    private Date operatorTime;
+	
 
 	public Long getGoodsId() {
 		return goodsId;

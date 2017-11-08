@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app.bean.RequestLoginBean;
 import com.app.dao.UserMapper;
-import com.app.service.StudentService;
 import com.google.gson.JsonObject;
 
 /**
@@ -23,8 +22,7 @@ import com.google.gson.JsonObject;
 @RequestMapping("/allow1")
 public class AllowAuthorityController1 {
     public static Log logger = LogFactory.getLog(AllowAuthorityController1.class);
-    @Autowired
-    private StudentService studentService;
+   
     
     @Autowired
     UserMapper userMapper;

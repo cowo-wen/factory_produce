@@ -6,9 +6,6 @@ package com.app.entity.sys;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -18,6 +15,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.app.entity.common.CacheVo;
+import com.app.entity.common.CustomCache;
+import com.app.entity.common.TableCache;
 
 /**
  * 功能说明：系统其他登录帐号表
@@ -26,16 +25,19 @@ import com.app.entity.common.CacheVo;
  */
 @Entity
 @Table(name = "t_sys_account")
+@TableCache(isCache=true)
 public class SysAccountEntity extends CacheVo  implements Serializable
 {
 
 	
-    /**
+   
+	
+	
+	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 6371079352659004339L;
-	
-	
+	private static final long serialVersionUID = -2427405953222918688L;
+
 	/**
 	 * 类型身份证
 	 */
@@ -54,20 +56,26 @@ public class SysAccountEntity extends CacheVo  implements Serializable
 	
 	public static final int TYPE_EMAIL = 3;
 	
-
+	public static final String ID = "id";
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private Long id;
     
+	public static final String TYPE = "type";
     @Column
     private Integer type;
 
-    @Column
-    private String otherAccount;
     
+	public static final String OTHER_ACCOUNT = "other_account";
     @Column
-    private Long UserId;
+    @CustomCache(sort = 0)
+    private String otherAccount;
+
+    
+	public static final String USER_ID = "user_id";
+    @Column
+    private Long userId;
     
     @Column
     private Date createTime;
@@ -112,12 +120,14 @@ public class SysAccountEntity extends CacheVo  implements Serializable
 		this.otherAccount = otherAccount;
 	}
 
+	
+
 	public Long getUserId() {
-		return UserId;
+		return userId;
 	}
 
 	public void setUserId(Long userId) {
-		UserId = userId;
+		this.userId = userId;
 	}
 
 	public Date getCreateTime() {
@@ -137,51 +147,10 @@ public class SysAccountEntity extends CacheVo  implements Serializable
 	}
 
 	
-	/**
-	 * 获取其他的登录帐号信息
-	 * @param type
-	 * @param account
-	 * @return
-	 */
-	public List<?> getCustomCache(int type,String account){
-		Map<String,Object> accountMap = new HashMap<String,Object>();
-		accountMap.put("field_1", "type");
-		accountMap.put("value_1", type);
-		accountMap.put("field_2", "other_account");
-		accountMap.put("value_2", account);
-    	return null;// getCustomCache(accountMap, "user_id");
-	}
 	
-	/**
-	 * 获取其他的登录帐号信息
-	 * @param type
-	 * @param account
-	 * @return
-	 */
-	public List<?> getCustomCache(String account){
-		for(int i = 1;i<=3;i++){
-			List<?> list = getCustomCache(i, account);
-			if(list != null && list.size() > 0){
-				return list;
-			}
-		}
-		
-		return null;
-	} 
+	
+	
     
-	/**
-	 * 获取其他的登录帐号信息
-	 * @param type
-	 * @param account
-	 * @return
-	 */
-	public void saveCustomCache(int type,String account,String userId){
-		Map<String,Object> accountMap = new HashMap<String,Object>();
-		accountMap.put("field_1", "type");
-		accountMap.put("value_1", type);
-		accountMap.put("field_2", "other_account");
-		accountMap.put("value_2", account);
-		//saveCustomCache(accountMap,"user_id",userId,userId);
-	}
+	
     
 }

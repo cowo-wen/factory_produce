@@ -19,7 +19,6 @@ import com.app.dao.sql.sort.AscSort;
 import com.app.entity.sys.SysApplicationEntity;
 import com.app.entity.sys.SysRoleApplicationEntity;
 import com.app.util.PublicMethod;
-import com.app.util.RedisAPI;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -49,18 +48,18 @@ public class ApplicationAPI extends Result {
     	int sEcho = 0;
     	for(JsonElement je : jo){
     		JsonObject jsonObject = je.getAsJsonObject();
-    		if (jsonObject.get("name").getAsString().equals("sEcho"))  
-                sEcho = jsonObject.get("value").getAsInt();  
-            else if (jsonObject.get("name").getAsString().equals("iDisplayStart"))  
-                iDisplayStart = jsonObject.get("value").getAsInt();  
-            else if (jsonObject.get("name").getAsString().equals("iDisplayLength"))  
-                iDisplayLength = jsonObject.get("value").getAsInt(); 
+    		if (jsonObject.get(NAME).getAsString().equals(S_ECHO))  
+                sEcho = jsonObject.get(VALUE).getAsInt();  
+            else if (jsonObject.get(NAME).getAsString().equals(I_DISPLAY_START))  
+                iDisplayStart = jsonObject.get(VALUE).getAsInt();  
+            else if (jsonObject.get(NAME).getAsString().equals(I_DISPLAY_LENGTH))  
+                iDisplayLength = jsonObject.get(VALUE).getAsInt(); 
     	}
     	
     	logger.error(aoData);
-    	SysApplicationEntity entity = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysApplicationEntity entity = new SysApplicationEntity();
     	
-    	SQLWhere sql = new SQLWhere().orderBy(new AscSort("sort_code"));
+    	SQLWhere sql = new SQLWhere().orderBy(new AscSort(SysApplicationEntity.SORT_CODE));
     	
     	List<SysApplicationEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
     	
@@ -86,7 +85,7 @@ public class ApplicationAPI extends Result {
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
     public String vo(@PathVariable("id") Long id) throws Exception{
-    	SysApplicationEntity entity = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysApplicationEntity entity = new SysApplicationEntity();
     	entity.setApplicationId(id);
     	entity.loadVo();
         return success(entity);
@@ -94,10 +93,10 @@ public class ApplicationAPI extends Result {
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
     public String delete(@PathVariable("id") Long id) throws Exception{
-    	SysApplicationEntity app = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysApplicationEntity app = new SysApplicationEntity();
     	app.setApplicationId(id);
-    	app.deleteLinkChild("parent_id");
-    	List<SysRoleApplicationEntity> list = new SysRoleApplicationEntity().getListVO(new SQLWhere(new NotINCnd("application_id", " select application_id from t_sys_application ")));
+    	app.deleteLinkChild(SysApplicationEntity.PARENT_ID);
+    	List<SysRoleApplicationEntity> list = new SysRoleApplicationEntity().getListVO(new SQLWhere(new NotINCnd(SysApplicationEntity.APPLICATION_ID, " select application_id from t_sys_application ")));
     	if(list != null && list.size() > 0){
     		for(SysRoleApplicationEntity ra : list){
         		ra.delete();
@@ -113,12 +112,18 @@ public class ApplicationAPI extends Result {
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
     public String update(@RequestParam String aoData) throws Exception{
-    	SysApplicationEntity entity = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysApplicationEntity entity = new SysApplicationEntity();
     	logger.error("-------"+aoData);
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
+    	jo.remove(SysApplicationEntity.APPLICATION_CODE);
     	jo.remove("applicationCode");
     	entity.parse(jo);
     	
+    	
+    	//SysApplicationEntity entity2 = new SysApplicationEntity();
+    	//entity2.setApplicationId(entity.getApplicationId()).loadVo();
+    	//entity.setParentApplicationCode(entity2.getParentApplicationCode());
+    	//entity.setApplicationCode(entity2.getApplicationCode());
     	if(PublicMethod.isEmptyStr(entity.getName())){
     		return error("应用名称不能为空");
     	}
@@ -162,7 +167,7 @@ public class ApplicationAPI extends Result {
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
     public String add(@RequestParam String aoData) throws Exception{
-    	SysApplicationEntity entity = new SysApplicationEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysApplicationEntity entity = new SysApplicationEntity();
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	
     	if(PublicMethod.isEmptyStr(entity.getName())){

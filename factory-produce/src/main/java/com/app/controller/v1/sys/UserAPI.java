@@ -19,7 +19,6 @@ import com.app.dao.sql.sort.DescSort;
 import com.app.entity.sys.SysUserEntity;
 import com.app.entity.sys.SysUserRoleEntity;
 import com.app.util.PublicMethod;
-import com.app.util.RedisAPI;
 import com.app.util.StaticBean;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -43,36 +42,33 @@ public class UserAPI extends Result{
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
     public String list(@RequestParam String aoData) throws Exception{
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
-    	SQLWhere sql = new SQLWhere().orderBy(new DescSort("user_id"));
+    	SQLWhere sql = new SQLWhere().orderBy(new DescSort(SysUserEntity.USER_ID));
     	int iDisplayStart = 0;// 起始  
     	int iDisplayLength = 10;// size 
     	int sEcho = 0;
     	for(JsonElement je : jo){
     		JsonObject jsonObject = je.getAsJsonObject();
-    		if (jsonObject.get("name").getAsString().equals("sEcho"))  
-                sEcho = jsonObject.get("value").getAsInt();  
-            else if (jsonObject.get("name").getAsString().equals("iDisplayStart"))  
-                iDisplayStart = jsonObject.get("value").getAsInt();  
-            else if (jsonObject.get("name").getAsString().equals("iDisplayLength"))  
-                iDisplayLength = jsonObject.get("value").getAsInt(); 
-            else if (jsonObject.get("name").getAsString().equals("userName")){  
-            	sql.and(new LikeCnd("user_name",jsonObject.get("value").getAsString()));
-            }else if (jsonObject.get("name").getAsString().equals("mobile")){  
-            	sql.and(new LikeCnd("mobile",jsonObject.get("value").getAsString()));
-            }else if (jsonObject.get("name").getAsString().equals("number")){  
-            	sql.and(new LikeCnd("number",jsonObject.get("value").getAsString()));
+    		if (jsonObject.get(NAME).getAsString().equals(S_ECHO))  
+                sEcho = jsonObject.get(VALUE).getAsInt();  
+            else if (jsonObject.get(NAME).getAsString().equals(I_DISPLAY_START))  
+                iDisplayStart = jsonObject.get(VALUE).getAsInt();  
+            else if (jsonObject.get(NAME).getAsString().equals(I_DISPLAY_LENGTH))  
+                iDisplayLength = jsonObject.get(VALUE).getAsInt(); 
+            else if (jsonObject.get(NAME).getAsString().equals(SysUserEntity.USER_NAME)){  
+            	sql.and(new LikeCnd(SysUserEntity.USER_NAME,jsonObject.get(VALUE).getAsString()));
+            }else if (jsonObject.get(NAME).getAsString().equals(SysUserEntity.MOBILE)){  
+            	sql.and(new LikeCnd(SysUserEntity.MOBILE,jsonObject.get(VALUE).getAsString()));
+            }else if (jsonObject.get(NAME).getAsString().equals(SysUserEntity.NUMBER)){  
+            	sql.and(new LikeCnd(SysUserEntity.NUMBER,jsonObject.get(VALUE).getAsString()));
             }
     	}
     	
-    	logger.error(aoData);
-    	SysUserEntity user = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysUserEntity entity = new SysUserEntity();
+    	entity.outPut("role");
+    	List<SysUserEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
     	
     	
-    	user.outPut("role");
-    	List<SysUserEntity> list = user.getListVO(iDisplayStart, iDisplayLength, sql);
-    	
-    	
-    	long count = user.getCount(sql);
+    	long count = entity.getCount(sql);
     	Map<String,Object> map = new HashMap<String,Object>();
     	map.put("status", 200);
     	map.put("data", list);
@@ -90,7 +86,7 @@ public class UserAPI extends Result{
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
     public String vo(@PathVariable("id") Long id) throws Exception{
-    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysUserEntity entity = new SysUserEntity();
     	entity.setUserId(id);
     	entity.loadVo();
         return success(entity);
@@ -98,14 +94,13 @@ public class UserAPI extends Result{
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
     public String delete(@PathVariable("id") Long id) {
-    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysUserEntity entity = new SysUserEntity();
     	entity.setUserId(id);
     	entity.loadVo();
-    	if(!PublicMethod.isEmptyStr(entity.getLoginName()) && entity.getLoginName().equals("admin")){
+    	if(!PublicMethod.isEmptyStr(entity.getLoginName()) && entity.getLoginName().equals(SysUserEntity.ADMIN_USER_NAME)){
     		return error("超级用户不能删除");
     	}else{
     		try {
-				
 				List<SysUserRoleEntity>  list = new SysUserRoleEntity().setUserId(id).queryCustomCacheValue(0, null);
 				entity.delete();
 				if(list != null){
@@ -113,10 +108,8 @@ public class UserAPI extends Result{
 						ur.delete();
 					}
 				}
-				
 				return success("删除成功");
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				return error("删除失败:"+e.getMessage());
 			}
@@ -132,10 +125,8 @@ public class UserAPI extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
     public String update(@RequestParam String aoData) throws Exception{
-    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
-    	logger.error("-------"+aoData);
+    	SysUserEntity entity = new SysUserEntity();
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
-    	
     	if(PublicMethod.isEmptyStr(entity.getUserName())){
     		return error("人员名称不能为空");
     	}
@@ -147,7 +138,7 @@ public class UserAPI extends Result{
     	if(PublicMethod.isEmptyValue(entity.getMobile())){
     		return error("手机号码不能为空");
     	}else{
-    		if(entity.getLoginName().equals("admin")){
+    		if(entity.getLoginName().equals(SysUserEntity.ADMIN_USER_NAME)){
     			return error("超级管理员不能修改");
     		}
     		entity.setLoginName(entity.getMobile());
@@ -161,7 +152,6 @@ public class UserAPI extends Result{
     	try{
     		
     		entity.update();
-    		//sysApplicationService.update(entity);
         	return success("修改成功",entity.getUserId());
     	}catch(Exception e){
     		return error(e.getMessage());
@@ -177,14 +167,12 @@ public class UserAPI extends Result{
      */
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/managePW")
     public String managePW(@RequestParam String aoData) throws Exception{
-    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
-    	logger.error("-------"+aoData);
+    	SysUserEntity entity = new SysUserEntity();
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	
     	if(PublicMethod.isEmptyStr(entity.getPassword()) || entity.getPassword().length() != 32){
     		return error("密码不能为空");
     	}
-    	
     	entity.setPassword(MD5.encode(entity.getPassword()));
     	try{
     		
@@ -204,15 +192,13 @@ public class UserAPI extends Result{
      */
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/updatePW")
     public String updatePW(@RequestParam String aoData) throws Exception{
-    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysUserEntity entity = new SysUserEntity();
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	if(PublicMethod.isEmptyStr(entity.getPassword()) || entity.getPassword().length() != 32){
     		return error("密码不能为空");
     	}
-    	
     	entity.setPassword(MD5.encode(entity.getPassword()));
     	try{
-    		
     		entity.update();
         	return success("修改成功",entity.getUserId());
     	}catch(Exception e){
@@ -223,9 +209,8 @@ public class UserAPI extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
     public String add(@RequestParam String aoData) throws Exception{
-    	SysUserEntity entity = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
+    	SysUserEntity entity = new SysUserEntity();
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
-    	logger.error("aoData="+aoData);
     	if(PublicMethod.isEmptyStr(entity.getUserName())){
     		return error("人员名称不能为空");
     	}

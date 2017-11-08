@@ -45,21 +45,19 @@ public class LogAPI extends Result{
     	int sEcho = 0;
     	for(JsonElement je : jo){
     		JsonObject jsonObject = je.getAsJsonObject();
-    		if (jsonObject.get("name").getAsString().equals("sEcho"))  
-                sEcho = jsonObject.get("value").getAsInt();  
-            else if (jsonObject.get("name").getAsString().equals("iDisplayStart"))  
-                iDisplayStart = jsonObject.get("value").getAsInt();  
-            else if (jsonObject.get("name").getAsString().equals("iDisplayLength"))  
-                iDisplayLength = jsonObject.get("value").getAsInt(); 
+    		if (jsonObject.get(NAME).getAsString().equals(S_ECHO))  
+                sEcho = jsonObject.get(VALUE).getAsInt();  
+            else if (jsonObject.get(NAME).getAsString().equals(I_DISPLAY_START))  
+                iDisplayStart = jsonObject.get(VALUE).getAsInt();  
+            else if (jsonObject.get(NAME).getAsString().equals(I_DISPLAY_LENGTH))  
+                iDisplayLength = jsonObject.get(VALUE).getAsInt(); 
     	}
     	
     	logger.error(aoData);
     	SysLogEntity log = new SysLogEntity(null);
     	
-    	SQLWhere sql = new SQLWhere().orderBy(new DescSort("log_id"));
-    	//if(!PublicMethod.isEmptyStr(ip)){
-    	//	sql.and(new EQCnd("ip", ip));
-    	//}
+    	SQLWhere sql = new SQLWhere().orderBy(new DescSort(SysLogEntity.LOG_ID));
+    	
     	List<CacheVo> list = log.getListVO(iDisplayStart, iDisplayLength, sql);
     	long count = log.getCount(sql);
     	Map<String,Object> map = new HashMap<String,Object>();

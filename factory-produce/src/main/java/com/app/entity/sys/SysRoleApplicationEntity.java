@@ -34,19 +34,26 @@ public class SysRoleApplicationEntity extends CacheVo implements Serializable {
 	 */
 	private static final long serialVersionUID = 1727093310464458636L;
 
+	public static final String ID = "id";
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column
 	private Long id;
 	
+	
+	public static final String ROLE_ID = "role_id";
 	@Column
 	@CustomCache(sort = 0)
 	private Long roleId;
 	
+	
+	public static final String APPLICATION_ID = "application_id";
 	@Column
 	@CustomCache(hashKey=true, sort = 1)
 	private Long applicationId;
 
+	
+	
 	@Column
 	private Date createTime;
 

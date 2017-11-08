@@ -57,7 +57,7 @@ public class LoginUserAPI extends Result{
     @RequestMapping(method=RequestMethod.GET,value="/logininfo")
     public String loginInfo(@RequestParam String terminalType) throws Exception{
     	RedisAPI redisAPI = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
-    	Set<String> set = redisAPI.keys(session.getId()+":applicationCode:*");
+    	Set<String> set = redisAPI.keys("temp:"+session.getId()+":application_code:*");
     	if(set != null && set.size() > 0){
     		Iterator<String> iterable = set.iterator();
     		while(iterable.hasNext()){
@@ -84,7 +84,7 @@ public class LoginUserAPI extends Result{
 			currentRole.put("time", String.valueOf(System.currentTimeMillis()));
 			currentRole.put("pc_index", role.getPcIndex());
 			currentRole.put("wc_index", role.getWxIndex());
-			list = new SysApplicationEntity().getListVO(new SQLWhere(new EQCnd("terminal_type",type)).and(new EQCnd("valid", StaticBean.YES)).orderBy(new AscSort("sort_Code","application_id")));
+			list = new SysApplicationEntity().getListVO(new SQLWhere(new EQCnd(SysApplicationEntity.TERMINAL_TYPE,type)).and(new EQCnd(SysApplicationEntity.VALID, StaticBean.YES)).orderBy(new AscSort(SysApplicationEntity.SORT_CODE,SysApplicationEntity.APPLICATION_ID)));
 		}else{
 			currentRole = redisAPI.hgetAll(session.getId()+":role:current:select");
 	    	List<SysUserRoleEntity> roles = new SysUserRoleEntity().setUserId(user.getUserId()).queryCustomCacheValue(0, null);
@@ -143,7 +143,7 @@ public class LoginUserAPI extends Result{
     	if(list != null && list.size() > 0){
     		for(SysApplicationEntity entity : list){
     			try{
-    				redisAPI.putOneDay(session.getId()+":applicationCode:"+entity.getApplicationCode(), entity.getUrl());//保存用户信息 保存一天
+    				redisAPI.putOneDay("temp:"+session.getId()+":application_code:"+entity.getApplicationCode(), entity.getUrl());//保存用户信息 保存一天
     			}catch(Exception e){
     				logger.error("获取应用", e);
     			}
@@ -165,7 +165,7 @@ public class LoginUserAPI extends Result{
     	
     	
     	String result = success(map);
-    	redisAPI.putOneDay(session.getId()+":userinfo", result);//保存用户信息
+    	redisAPI.putOneDay("temp:"+session.getId()+":userinfo", result);//保存用户信息
         return result;
     }
     

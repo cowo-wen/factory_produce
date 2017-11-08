@@ -48,6 +48,8 @@ public class RepertoryGoodsEntity extends CacheVo  implements Serializable
      */
     public static final int GOOD_TYPE_FINISHED_PRODUCT = 3;
 	
+    
+    public static final String GOODS_ID = "goods_id";
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
@@ -57,42 +59,49 @@ public class RepertoryGoodsEntity extends CacheVo  implements Serializable
     /**
      * 产品类型：原料、半成品、成品
      */
+    public static final String TYPE = "type";
     @Column
     private Integer type;
     
     /**
      * 产品名称
      */
+    public static final String NAME = "name";
     @Column
     private String name;
     
     /**
      * 产品图片
      */
+    public static final String PICTURE = "picture";
     @Column
     private String picture;
     
     /**
      * 产品单价
      */
+    public static final String PRICE = "price";
     @Column
     private Double price;
     
     /**
      * 产品生产价
      */
+    public static final String PRODUCE_PRICE = "produce_price";
     @Column
     private Double producePrice;
     
     /**
      * 产品出货价
      */
+    public static final String COMMODITY_PRICE = "commodity_price";
     @Column
     private Double commodityPrice;
     
     /**
      * 产品编号
      */
+    public static final String CODE = "code";
     @Column
     @CustomCache(sort = 0)
     private String code;
@@ -100,24 +109,28 @@ public class RepertoryGoodsEntity extends CacheVo  implements Serializable
     /**
      * 产品规格
      */
+    public static final String SPECIFICATIONS = "specifications";
     @Column
     private String specifications;
     
     /**
      * 净重
      */
+    public static final String SUTTLE = "suttle";
     @Column
     private String suttle;
     
     /**
      * 毛重
      */
+    public static final String GROSS_WEIGHT = "gross_weight";
     @Column
     private String grossWeight;
     
     /**
      * 包装
      */
+    public static final String PACKING = "packing";
     @Column
     private String packing;
     
@@ -125,20 +138,30 @@ public class RepertoryGoodsEntity extends CacheVo  implements Serializable
     /**
      * 库存
      */
+    public static final String INVENTORY = "inventory";
     @Column
     private Long inventory;
     
     /**
      * 锁定数量
      */
+    public static final String LOCKING = "locking";
     @Column
     private Long locking;
     
     /**
      * 立方数
      */
+    public static final String CUBIC_NUMBER = "cubic_number";
     @Column
-    private String CcubicNumber;
+    private String cubicNumber;
+    
+    /**
+     * 描述
+     */
+    public static final String REMARK = "remark";
+    @Column
+    private String remark;
     
    
     
@@ -147,6 +170,19 @@ public class RepertoryGoodsEntity extends CacheVo  implements Serializable
     
     @Column
     private Date operatorTime;
+
+    
+    
+    
+    
+    
+	public RepertoryGoodsEntity() {
+		super();
+	}
+
+	public RepertoryGoodsEntity(String redisObj) {
+		super(redisObj);
+	}
 
 	public Long getGoodsId() {
 		return goodsId;
@@ -267,12 +303,13 @@ public class RepertoryGoodsEntity extends CacheVo  implements Serializable
 		return this;
 	}
 
-	public String getCcubicNumber() {
-		return CcubicNumber;
+
+	public String getCubicNumber() {
+		return cubicNumber;
 	}
 
-	public RepertoryGoodsEntity setCcubicNumber(String ccubicNumber) {
-		CcubicNumber = ccubicNumber;
+	public RepertoryGoodsEntity setCubicNumber(String cubicNumber) {
+		this.cubicNumber = cubicNumber;
 		return this;
 	}
 
@@ -301,6 +338,14 @@ public class RepertoryGoodsEntity extends CacheVo  implements Serializable
 	public RepertoryGoodsEntity setLocking(Long locking) {
 		this.locking = locking;
 		return this;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
 	}
     
     

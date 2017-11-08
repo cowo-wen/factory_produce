@@ -47,12 +47,12 @@ public class RoleAPI extends Result{
     	int sEcho = 0;
     	for(JsonElement je : jo){
     		JsonObject jsonObject = je.getAsJsonObject();
-    		if (jsonObject.get("name").getAsString().equals("sEcho"))  
-                sEcho = jsonObject.get("value").getAsInt();  
-            else if (jsonObject.get("name").getAsString().equals("iDisplayStart"))  
-                iDisplayStart = jsonObject.get("value").getAsInt();  
-            else if (jsonObject.get("name").getAsString().equals("iDisplayLength"))  
-                iDisplayLength = jsonObject.get("value").getAsInt(); 
+    		if (jsonObject.get(NAME).getAsString().equals(S_ECHO))  
+                sEcho = jsonObject.get(VALUE).getAsInt();  
+            else if (jsonObject.get(NAME).getAsString().equals(I_DISPLAY_START))  
+                iDisplayStart = jsonObject.get(VALUE).getAsInt();  
+            else if (jsonObject.get(NAME).getAsString().equals(I_DISPLAY_LENGTH))  
+                iDisplayLength = jsonObject.get(VALUE).getAsInt(); 
             else if (jsonObject.get("name").getAsString().equals("roleName")){  
             	sql.and(new LikeCnd("role_name",jsonObject.get("value").getAsString()));
             }

@@ -7,7 +7,11 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
 
 public class Result {
-	
+	public static final String NAME = "name";
+	public static final String S_ECHO = "sEcho";
+	public static final String VALUE = "value";
+	public static final String I_DISPLAY_START = "iDisplayStart";
+	public static final String I_DISPLAY_LENGTH = "iDisplayLength";
 	
 	@SuppressWarnings("unchecked")
 	public String success(Object obj){

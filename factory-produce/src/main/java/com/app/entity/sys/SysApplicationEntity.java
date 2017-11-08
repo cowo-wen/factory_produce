@@ -13,7 +13,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
@@ -41,6 +40,7 @@ public class SysApplicationEntity extends CacheVo implements Comparable<SysAppli
 	/**
 	 * 主键
 	 */
+	public static final String APPLICATION_ID = "application_id";
 	@Id
 	@Column
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,48 +50,56 @@ public class SysApplicationEntity extends CacheVo implements Comparable<SysAppli
 	/**
 	 * 父节点
 	 */
+	public static final String PARENT_ID = "parent_id";
 	@Column
     private Long parentId;
 
 	/**
 	 * 终端类型 1表示pc端，2表示微信端
 	 */
+	public static final String TERMINAL_TYPE = "terminal_type";
 	@Column
     private Integer terminalType;
 	
 	/**
 	 * 应用类型，1表示菜单,2表示导航方法，3表示按钮，4表示其他
 	 */
+	public static final String APP_TYPE = "app_type";
 	@Column
     private Integer appType;
 	
 	/**
 	 * 事件类型，1表示url,2表示js方法，3表示html
 	 */
+	public static final String EVENT_TYPE = "event_type";
 	@Column
     private Integer eventType;
 	
 	/**
 	 * 是否有效 1是 2否
 	 */
+	public static final String VALID = "valid";
 	@Column
     private Integer valid;
     
 	/**
 	 * 应用名称
 	 */
+	public static final String NAME = "name";
 	@Column
     private String name;
     
 	/**
 	 * 图标代码
 	 */
+	public static final String ICON_CODE = "icon_code";
 	@Column
     private String iconCode;
 	
 	/**
 	 * 应用代码
 	 */
+	public static final String APPLICATION_CODE = "application_code";
 	@Column
 	@CustomCache(sort = 0)
     private String applicationCode;
@@ -99,13 +107,44 @@ public class SysApplicationEntity extends CacheVo implements Comparable<SysAppli
 	/**
 	 * 父应用代码
 	 */
+	public static final String PARENT_APPLICATION_CODE = "parent_application_code";
 	@Column
     private String parentApplicationCode;
 	
 	
+	/**
+	 * 备注
+	 */
+	public static final String REMARK = "remark";
+	@Column
+    private String remark;
 	
+	/**
+	 * 排序
+	 */
+	public static final String SORT_CODE = "sort_code";
+	@Column
+    private Integer sortCode;
+    
+	/**
+	 * 输出代码
+	 */
+	public static final String OUT_CODE = "out_code";
+	@Column
+    private String outCode;
 	
-	
+	/**
+	 * url
+	 */
+	public static final String URL = "url";
+	@Column
+    private String url;
+    
+	@Column
+    private Date createTime;
+    
+	@Column
+    private Date operatorTime;
     
 	
 	public String getParentApplicationCode() {
@@ -116,50 +155,6 @@ public class SysApplicationEntity extends CacheVo implements Comparable<SysAppli
 		this.parentApplicationCode = parentApplicationCode;
 	}
 
-	/**
-	 * 备注
-	 */
-	@Column
-    private String remark;
-	
-	/**
-	 * 排序
-	 */
-	@Column
-    private Integer sortCode;
-    
-	/**
-	 * 输出代码
-	 */
-	@Column
-    private String outCode;
-	
-	/**
-	 * url
-	 */
-	@Column
-    private String url;
-    
-	@Column
-    private Date createTime;
-    
-	@Column
-    private Date operatorTime;
-    
-    
-
-	
-	
-	/**
-	 * @Transient 注解不用创建字段到数据库
-	 */
-	@Transient
-	private boolean open;
-	
-	
-	
-	@Transient
-	private boolean checked;
     
 
 	public String getUrl() {
@@ -302,21 +297,7 @@ public class SysApplicationEntity extends CacheVo implements Comparable<SysAppli
 		this.iconCode = iconCode;
 	}
 
-	public boolean isOpen() {
-		return open;
-	}
-
-	public void setOpen(boolean open) {
-		this.open = open;
-	}
-
-	public boolean isChecked() {
-		return checked;
-	}
-
-	public void setChecked(boolean checked) {
-		this.checked = checked;
-	}
+	
 
 	
 
