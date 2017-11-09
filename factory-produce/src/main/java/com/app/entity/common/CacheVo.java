@@ -84,6 +84,10 @@ public class CacheVo {
 	
 	private transient  String[] outPutFields;
 	
+	private transient JdbcDao jdbcDao;
+	
+	private transient boolean autoCommit = true;
+	
 	
 	public static final String CREATE_TIME = "create_time";
 	
@@ -91,9 +95,12 @@ public class CacheVo {
 	
 	
 	
+	private transient int constructionType = 0;
 	
 
     
+
+	
 
 	public synchronized static void setApplicationContext(ApplicationContext context) {
     	if(applicationContext == null){
@@ -121,6 +128,7 @@ public class CacheVo {
 		}else{
 			daoName = daoSoure;
 		}
+		constructionType = 2;
 	}
 
 	public CacheVo(String redisObj) {
@@ -131,11 +139,27 @@ public class CacheVo {
 		}else{
 			this.redisObj = redisObj;
 		}
+		constructionType = 1;
+	}
+	
+	/**
+	 * 使用事务
+	 */
+	public void useTransaction() {
+		this.autoCommit = false;
 	}
 
+	public void setJdbcDao(JdbcDao jdbcDao) {
+		this.jdbcDao = jdbcDao;
+		useTransaction();
+	}
+	
 	public synchronized JdbcDao getJdbcDao(){
 		if(PublicMethod.isEmptyStr(daoName)) daoName = "jdbcDao";
-		return (JdbcDao)applicationContext.getBean(daoName);
+		if(jdbcDao == null){
+			jdbcDao = (JdbcDao)applicationContext.getBean(daoName);
+		}
+		return jdbcDao;
 	}
 	
 	
@@ -143,7 +167,16 @@ public class CacheVo {
 	private <T extends CacheVo> T newCacheVo(){
 		T vo = null;
 		try {
-			vo = (T) this.getClass().getConstructor(String.class).newInstance(redisObj);
+			if(constructionType == 0){
+				vo = (T) this.getClass().newInstance();
+			}else if(constructionType == 1){
+				vo = (T) this.getClass().getConstructor(String.class).newInstance(redisObj);
+			}else if(constructionType == 2){
+				vo = (T) this.getClass().getConstructor(String.class,String.class).newInstance(redisObj,jdbcDao);
+			}
+			if(!autoCommit){
+				vo.setJdbcDao(jdbcDao);
+			}
 		} catch (Exception e) {
 			logger.error("反映创建对象失败="+this.getClass(), e);
 		} 
@@ -1045,45 +1078,6 @@ public class CacheVo {
 			}
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-	
-
-	
-
-	
-
-	
-	
-	
-	
-	
 
 
 
@@ -1198,7 +1192,9 @@ public class CacheVo {
 		logger.error("--------------insertSql="+sql.toString());
 		long id = getJdbcDao().insert(sql.toString(), listParam.toArray());
 		setPKValue(String.valueOf(id));
-		insertNosql(1);//保存缓存数据
+		if(!autoCommit){
+			insertNosql(1);//保存缓存数据
+		}
 		vo.deleteCustomCacheAll();//删除自定义缓存
 		return id;
 	}
@@ -1389,7 +1385,12 @@ public class CacheVo {
 		//param[len] = getFieldValue(getPKField());
 		listParam.add(getFieldValue(getPKField()));
 		int index = getJdbcDao().update(sql.toString(), listParam.toArray());
-		insertNosql(1);//保存缓存数据
+		if(autoCommit){
+			insertNosql(1);//保存缓存数据
+		}else{
+			deleteNoSql();
+		}
+		
 		//deleteCustomCacheAll();//删除自定义缓存
 		vo.deleteCustomCacheAll();
 		return index;

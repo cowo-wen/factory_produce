@@ -13,10 +13,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
+import com.google.gson.annotations.Expose;
 
 /**
  * 功能说明：产品组成信息
@@ -57,6 +59,7 @@ public class RepertoryGoodsComponentEntity extends CacheVo  implements Serializa
      */
     public static final String COMPONENT_ID = "component_id";
     @Column
+    @CustomCache(sort = 0,hashKey=true)
     private Long componentId;
     
     
@@ -73,6 +76,45 @@ public class RepertoryGoodsComponentEntity extends CacheVo  implements Serializa
     
     @Column
     private Date operatorTime;
+    
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    public static final String NAME = "name";
+    @Transient
+    @Expose(deserialize = true)
+    private String name;
+
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    public static final String TYPE = "type";
+    @Transient
+    @Expose(deserialize = true)
+    private Integer type;
+
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    public static final String CODE = "code";
+    @Transient
+    @Expose(deserialize = true)
+    private String code;
+    
+    
+	public RepertoryGoodsComponentEntity() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+
+
+	public RepertoryGoodsComponentEntity(String redisObj) {
+		super(redisObj);
+		// TODO Auto-generated constructor stub
+	}
+
+
 
 	public Long getGoodsId() {
 		return goodsId;
@@ -122,8 +164,9 @@ public class RepertoryGoodsComponentEntity extends CacheVo  implements Serializa
 
 
 
-	public void setComponentId(Long componentId) {
+	public RepertoryGoodsComponentEntity setComponentId(Long componentId) {
 		this.componentId = componentId;
+		return this;
 	}
 
 
@@ -144,6 +187,49 @@ public class RepertoryGoodsComponentEntity extends CacheVo  implements Serializa
 	public RepertoryGoodsComponentEntity setGoodsId(Long goodsId) {
 		this.goodsId = goodsId;
 		return this;
+	}
+
+
+
+	public String getName() {
+		if(this.componentId > 0){
+			RepertoryGoodsEntity goods = new RepertoryGoodsEntity();
+			goods.setGoodsId(this.componentId).loadVo();
+			this.name = goods.getName();
+			this.type = goods.getType();
+			this.code = goods.getCode();
+		}
+		return name;
+	}
+
+
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+
+
+	public Integer getType() {
+		return type;
+	}
+
+
+
+	public void setType(Integer type) {
+		this.type = type;
+	}
+
+
+
+	public String getCode() {
+		return code;
+	}
+
+
+
+	public void setCode(String code) {
+		this.code = code;
 	}
     
     

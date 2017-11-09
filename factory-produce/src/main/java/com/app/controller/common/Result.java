@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class Result {
@@ -12,6 +13,12 @@ public class Result {
 	public static final String VALUE = "value";
 	public static final String I_DISPLAY_START = "iDisplayStart";
 	public static final String I_DISPLAY_LENGTH = "iDisplayLength";
+	
+	protected int iDisplayStart = 0;// 起始  
+	protected int iDisplayLength = 10;// size 
+	protected int sEcho = 0;
+	
+	private static final Gson gson = new GsonBuilder().serializeNulls().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 	
 	@SuppressWarnings("unchecked")
 	public String success(Object obj){
@@ -28,7 +35,8 @@ public class Result {
 	    	map.put("data", obj);
 	    	map.put("id", "成功");
 		}
-		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
+		
+		return new GsonBuilder().serializeNulls().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
 	}
 	
 	
@@ -38,14 +46,20 @@ public class Result {
     	map.put("status", 200);
     	map.put("message", message);
     	map.put("id", id);
-    	return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
+    	synchronized (gson) {
+			return gson.toJson(map);
+		}
+    	//return new GsonBuilder().serializeNulls().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
 	}
 	
 	public String error(String message){
 		Map<String,Object> map = new HashMap<String,Object>();
     	map.put("status", 500);
     	map.put("message", message);
-    	return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
+    	synchronized (gson) {
+			return gson.toJson(map);
+		}
+    	//return new GsonBuilder().serializeNulls().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
 	}
 
 }

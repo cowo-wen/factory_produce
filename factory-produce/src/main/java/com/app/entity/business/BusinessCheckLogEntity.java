@@ -29,7 +29,7 @@ public class BusinessCheckLogEntity extends CacheVo  implements Serializable
 	/**
 	 * 产品流水明细审核类型
 	 */
-	public static final int TYPE_REPERTORY_GOODS_DETAIL = 1;
+	public static final int TYPE_REPERTORY_GOODS_BILL = 1;
     
 	/**
 	 * 
@@ -127,6 +127,70 @@ public class BusinessCheckLogEntity extends CacheVo  implements Serializable
 	public BusinessCheckLogEntity setOperatorTime(Date operatorTime) {
 		this.operatorTime = operatorTime;
 		return this;
+	}
+
+	public Long getCheckLogId() {
+		return checkLogId;
+	}
+
+	public void setCheckLogId(Long checkLogId) {
+		this.checkLogId = checkLogId;
+	}
+
+	public Integer getType() {
+		return type;
+	}
+
+	public void setType(Integer type) {
+		this.type = type;
+	}
+
+	public Long getDataId() {
+		return dataId;
+	}
+
+	public void setDataId(Long dataId) {
+		this.dataId = dataId;
+	}
+
+	public Integer getCheckStatus() {
+		return checkStatus;
+	}
+
+	public void setCheckStatus(Integer checkStatus) {
+		this.checkStatus = checkStatus;
+	}
+
+	public Long getCheckUser() {
+		return checkUser;
+	}
+
+	public void setCheckUser(Long checkUser) {
+		this.checkUser = checkUser;
+	}
+
+	public Date getCheckTime() {
+		return checkTime;
+	}
+
+	public void setCheckTime(Date checkTime) {
+		this.checkTime = checkTime;
+	}
+
+	public Long getNumber() {
+		return number;
+	}
+
+	public void setNumber(Long number) {
+		this.number = number;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
 	}
 
 

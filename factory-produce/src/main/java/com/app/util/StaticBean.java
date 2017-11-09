@@ -8,6 +8,8 @@ public class StaticBean
 	
 	public static final int NO = 2;
 	
+	public static final int WAIT = 3;
+	
     /**
      * 
      * 
