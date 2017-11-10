@@ -160,6 +160,7 @@ public class ApplicationAPI extends Result {
     		//sysApplicationService.update(entity);
         	return success("修改成功",entity.getApplicationId());
     	}catch(Exception e){
+    		logger.error("修改失败", e);
     		return error(e.getMessage());
     	}
     	

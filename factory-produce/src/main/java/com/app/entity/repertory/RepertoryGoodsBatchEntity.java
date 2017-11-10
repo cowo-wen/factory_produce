@@ -278,9 +278,8 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Comparable<Re
 	@Override
 	public int delete() throws Exception {
 		RepertoryGoodsBatchEntity batch =new RepertoryGoodsBatchEntity();
-		batch.setJdbcDao(getJdbcDao());
 		batch.setGoodsBatchId(goodsBatchId).loadVo();
-		if(batch.inventory != 0 && batch.locking != 0){
+		if(batch.inventory != 0 || batch.locking != 0){
 			throw new Exception("库存不为空，不能删除");
 		}
 		return super.delete();

@@ -741,25 +741,38 @@ public class CacheVo {
 	 */
 	public CacheVo parse(JsonObject jo){
 		//JsonObject jo = new JsonParser().parse(json).getAsJsonObject();
-		String idName = getPKField().getName();
-		if(jo.has(idName)){
-			String idValue = jo.get(idName).getAsString();
-			if(!PublicMethod.isEmptyStr(idValue) && Format.isNumeric(idValue)){
-				setPKValue(idValue);
-				loadVo();
-			}
-		}else{
-			Map<String,String> map =getCustomORM();
-			if(map.containsKey(idName)){
-				if(jo.has(map.get(idName))){
-					String idValue = jo.get(map.get(idName)).getAsString();
-					if(!PublicMethod.isEmptyStr(idValue) && Format.isNumeric(idValue)){
-						setPKValue(idValue);
-						loadVo();
+		return parse( jo, 0);
+	}
+	
+	/**
+	 * json对象转实体
+	 * @param jo
+	 * @return
+	 */
+	public CacheVo parse(JsonObject jo,int type){
+		//JsonObject jo = new JsonParser().parse(json).getAsJsonObject();
+		if(type==0){
+			String idName = getPKField().getName();
+			if(jo.has(idName)){
+				String idValue = jo.get(idName).getAsString();
+				if(!PublicMethod.isEmptyStr(idValue) && Format.isNumeric(idValue)){
+					setPKValue(idValue);
+					loadVo();
+				}
+			}else{
+				Map<String,String> map =getCustomORM();
+				if(map.containsKey(idName)){
+					if(jo.has(map.get(idName))){
+						String idValue = jo.get(map.get(idName)).getAsString();
+						if(!PublicMethod.isEmptyStr(idValue) && Format.isNumeric(idValue)){
+							setPKValue(idValue);
+							loadVo();
+						}
 					}
 				}
 			}
 		}
+		
 		logger.error("------修改前："+toString());
 		setVo(jo);
 		logger.error("------修改后："+toString());
@@ -824,15 +837,17 @@ public class CacheVo {
 							}
 							
 							if(mapVo.containsKey(columnORM.get(field.getName()))){
-								vo.setFieldValue(field,mapVo.get(columnORM.get(field.getName())));
-							}else{
-								vo.setFieldValue(field," ");
+								Object obj = mapVo.get(columnORM.get(field.getName()));
+								if(obj != null){
+									vo.setFieldValue(field,obj);
+								}
+								
 							}
 						}
 						
 						if(outPutSet != null && outPutSet.size() > 0 && out != null && out.size() > 0){
 							for(Map.Entry<Field, String> kv : out.entrySet()){
-								if(outPutSet.contains(kv.getKey().getName())){
+								if(outPutSet.contains(kv.getKey().getName()) || outPutSet.contains(getORMName(kv.getKey().getName()))){
 									vo.getClass().getMethod(kv.getValue()).invoke(vo);
 								}
 							}
@@ -1136,7 +1151,7 @@ public class CacheVo {
 	public long insert() throws Exception{
 		JsonObject jo = new JsonParser().parse(toString()).getAsJsonObject();
 		CacheVo vo = newCacheVo();
-		vo.parse(jo);
+		vo.parse(jo,1);
 		List<List<CacheVo>> list = vo.queryAllCustomCacheValue();
 		if(list.size() > 0){
 			for(List<CacheVo> listVO : list){
@@ -1245,13 +1260,13 @@ public class CacheVo {
 			
 		}else if(field.getType().equals(java.util.Date.class)){
 			if(value == null){
-				return "''";
+				return "null";
 			}
 			return "'"+PublicMethod.formatDateStr((java.util.Date)value, "yyyy-MM-dd HH:mm:ss")+"'";
 			
 		}else if(field.getType().equals(java.sql.Date.class)){
 			if(value == null){
-				return "''";
+				return "null";
 			}
 			return "'"+PublicMethod.formatDateStr((java.sql.Date)value, "yyyy-MM-dd HH:mm:ss")+"'";
 		}else{
@@ -1338,20 +1353,17 @@ public class CacheVo {
 		boolean bool = false;
 		if(fieldName != null && fieldName.length > 0){
 			List<String> fieldList = Arrays.asList(fieldName);
+			columnSql.append("operator_time").append(" = ? ");
+			listParam.add(new Date());
 			for(int i = 0;i<len;i++){
 				Field field = listField.get(i);
 				String column = columnORM.get(field.getName());
 				if(fieldList.contains(column) || fieldList.contains(field.getName())){
-					if(bool){
-						columnSql.append(",").append(column).append(" = ? ");
-					}else{
-						bool = true;
-						columnSql.append(column).append(" = ? ");
-					}
-					//param[i] = getFieldValue(field);
+					columnSql.append(",").append(column).append(" = ? ");
 					listParam.add(getFieldValue(field));
 				}
 			}
+			sql.append(columnSql);
 		}else{
 			for(int i = 0;i<len;i++){
 				Field field = listField.get(i);

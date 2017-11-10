@@ -14,13 +14,15 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.app.entity.business.BusinessCheckLogEntity;
 import com.app.entity.common.CacheVo;
-import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
+import com.app.entity.sys.SysUserEntity;
 import com.app.util.PublicMethod;
 import com.app.util.StaticBean;
+import com.google.gson.annotations.Expose;
 
 /**
  * 功能说明：产品帐单
@@ -72,7 +74,6 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
    	 */
    	public static final String GOODS_BATCH_CODE = "goods_batch_code";
     @Column
-    @CustomCache(sort = 0,hashKey={true,false},gorup={0,1})
     private String goodsBatchCode;
     
     
@@ -110,7 +111,14 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
      */
     public static final String CHECK_TIME = "check_time";
     @Column
-    private Date checkTime;
+    private String checkTime;
+    
+    /**
+     * 审核备注
+     */
+    public static final String CHECK_REMARK = "check_remark";
+    @Column
+    private String checkRemark;
     
     /**
      * 产品类型：盘点，出货，入货
@@ -119,7 +127,12 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
     @Column
     private Integer type;
     
-   
+    /**
+     * 单据名称
+     */
+    public static final String TITLE = "title";
+    @Column
+    private String title;
     
     @Column
     private Date createTime;
@@ -128,6 +141,21 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
     private Date operatorTime;
 
 	
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    public static final String CHECK_USER_NAME = "check_user_name";
+    @Transient
+    @Expose(deserialize = true)
+    private String checkUserName;
+    
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    public static final String LIABLE_USER_NAME = "liable_user_name";
+    @Transient
+    @Expose(deserialize = true)
+    private String liableUserName;
 
 	public RepertoryGoodsBillEntity() {
 		super();
@@ -159,8 +187,9 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
 		return goodsBillId;
 	}
 
-	public void setGoodsBillId(Long goodsBillId) {
+	public RepertoryGoodsBillEntity setGoodsBillId(Long goodsBillId) {
 		this.goodsBillId = goodsBillId;
+		return this;
 	}
 
 	public String getGoodsBatchCode() {
@@ -195,11 +224,11 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
 		this.liableUser = liableUser;
 	}
 
-	public Date getCheckTime() {
+	public String getCheckTime() {
 		return checkTime;
 	}
 
-	public void setCheckTime(Date checkTime) {
+	public void setCheckTime(String checkTime) {
 		this.checkTime = checkTime;
 	}
 
@@ -220,9 +249,69 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
 	public void setRemark(String remark) {
 		this.remark = remark;
 	}
+	
+	
+	
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	
+	
+	public String getCheckRemark() {
+		return checkRemark;
+	}
+
+	public void setCheckRemark(String checkRemark) {
+		this.checkRemark = checkRemark;
+	}
+
+	public String getCheckUserName() {
+		if(!PublicMethod.isEmptyValue(checkUser)){
+			SysUserEntity user = new SysUserEntity();
+			user.setJdbcDao(getJdbcDao());
+			user.setUserId(checkUser).loadVo();
+			checkUserName = user.getUserName();
+		}
+		return checkUserName;
+	}
+
+	public void setCheckUserName(String checkUserName) {
+		this.checkUserName = checkUserName;
+	}
+
+	public String getLiableUserName() {
+		logger.error("===========================liableUser="+liableUser);
+		if(!PublicMethod.isEmptyValue(liableUser)){
+			SysUserEntity user = new SysUserEntity();
+			//user.setJdbcDao(getJdbcDao());
+			user.setUserId(liableUser).loadVo();
+			liableUserName = user.getUserName();
+			logger.error("==================="+user.getLoginName());
+		}
+		return liableUserName;
+	}
+
+	public void setLiableUserName(String liableUserName) {
+		this.liableUserName = liableUserName;
+	}
 
 	@Override
 	public long insert() throws Exception {
+		
+		
+		if(PublicMethod.isEmptyStr(title)){
+			throw new Exception("名称不能为空");
+		}
+		
+		if(PublicMethod.isEmptyStr(goodsBatchCode)){
+			throw new Exception("批次号不能为空");
+		}
 		checkStatus = StaticBean.WAIT;
 		return super.insert();
 	}
@@ -243,7 +332,7 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
 		List<RepertoryGoodsBillDetailEntity> list = detail.queryCustomCacheValue(0);
 		if(list != null && list.size() > 0){
 			for(RepertoryGoodsBillDetailEntity obj : list){
-				obj.setType(type);
+				obj.setType(bill.getType());
 				obj.delete();
 			}
 		}
@@ -258,6 +347,26 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
 		bill.loadVo();
 		if(bill.checkStatus == StaticBean.YES){
 			throw new Exception("审核通过的数据不能修改");
+		}
+		
+		if(bill.checkStatus != checkStatus){
+			Date date = new Date();
+			if(checkStatus == StaticBean.YES){
+				checkTime = PublicMethod.formatDateStr(date);
+			}else if(checkStatus == StaticBean.NO){
+				BusinessCheckLogEntity log = new BusinessCheckLogEntity();
+				log.setRemark(checkRemark);
+				log.setType(BusinessCheckLogEntity.TYPE_REPERTORY_GOODS_BILL);
+				log.setCheckStatus(checkStatus);
+				log.setDataId(goodsBillId);
+				log.setCheckTime(date);
+				log.setCheckUser(checkUser);
+				log.setNumber(0L);
+				log.insert();
+				checkTime = PublicMethod.formatDateStr(date);
+			}
+		}else if(bill.checkStatus == StaticBean.NO){
+			checkStatus = StaticBean.WAIT;
 		}
 		int id = super.update(fieldName);
 		if(this.checkStatus == StaticBean.YES){//审核通过
@@ -329,15 +438,6 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
 			}
 			
 			
-		}else if(this.checkStatus == StaticBean.NO){//审核不通过
-			BusinessCheckLogEntity log = new BusinessCheckLogEntity();
-			log.setRemark(remark);
-			log.setType(BusinessCheckLogEntity.TYPE_REPERTORY_GOODS_BILL);
-			log.setCheckStatus(checkStatus);
-			log.setDataId(goodsBillId);
-			log.setCheckUser(checkUser);
-			log.setNumber(0L);
-			log.insert();
 		}
 		return id;
 	}

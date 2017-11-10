@@ -96,7 +96,7 @@ public class ComponentAPI extends Result{
     		return success("删除成功");
     	}catch(Exception e){
     		logger.error("删除失败", e);
-    		return success("删除失败");
+    		return error(e.getMessage());
     	}
     	
     }

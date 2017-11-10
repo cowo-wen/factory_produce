@@ -71,6 +71,9 @@ public class LoginUserAPI extends Result{
     	SysUserEntity user = new SysUserEntity();
     	user.setUserId(userDetails.getUserId());
     	user.loadVo();
+    	logger.error("------1----------type="+userDetails.getType());
+    	userDetails.setType(user.getType());
+    	logger.error("------2----------type="+userDetails.getType());
     	int type = Integer.parseInt(terminalType);
     	List<SysRoleEntity> roleList = new ArrayList<SysRoleEntity>();
     	Map<String,String> currentRole = null;

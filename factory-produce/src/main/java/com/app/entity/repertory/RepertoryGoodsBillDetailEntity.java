@@ -16,7 +16,6 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import com.app.entity.common.CacheVo;
-import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
 import com.app.util.PublicMethod;
 import com.google.gson.annotations.Expose;
@@ -48,7 +47,6 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
     
     public static final String GOODS_BILL_ID = "goods_bill_id";
     @Column
-    @CustomCache(sort = 0)
     private Long goodsBillId;
     
     /**
@@ -86,6 +84,31 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
     @Transient
     @Expose(deserialize = true)
     private Integer type;
+    
+    
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    public static final String NAME = "name";
+    @Transient
+    @Expose(deserialize = true)
+    private String name;
+
+    /**
+	 * 批次代码
+	 */
+	public static final String GOODS_BATCH_CODE = "goods_batch_code";
+	@Transient
+	@Expose(deserialize = true)
+    private String goodsBatchCode;
+
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    public static final String CODE = "code";
+    @Transient
+    @Expose(deserialize = true)
+    private String code;
 
 	public RepertoryGoodsBillDetailEntity() {
 		super();
@@ -159,6 +182,45 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 
 	public void setType(Integer type) {
 		this.type = type;
+	}
+	
+	
+
+	public String getName() {
+		if(this.goodsId > 0){
+			RepertoryGoodsEntity goods = new RepertoryGoodsEntity();
+			goods.setGoodsId(this.goodsId).loadVo();
+			this.name = goods.getName();
+			this.type = goods.getType();
+			this.code = goods.getCode();
+		}
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getGoodsBatchCode() {
+		if(this.goodsBatchId > 0){
+			RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity();
+			batch.setGoodsBatchId(this.goodsBatchId).loadVo();
+			this.goodsBatchCode = batch.getGoodsBatchCode();
+		}
+		return goodsBatchCode;
+	}
+
+	public void setGoodsBatchCode(String goodsBatchCode) {
+		
+		this.goodsBatchCode = goodsBatchCode;
+	}
+
+	public String getCode() {
+		return code;
+	}
+
+	public void setCode(String code) {
+		this.code = code;
 	}
 
 	@Override

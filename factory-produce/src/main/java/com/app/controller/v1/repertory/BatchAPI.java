@@ -17,6 +17,8 @@ import com.app.dao.sql.SQLWhere;
 import com.app.dao.sql.cnd.EQCnd;
 import com.app.dao.sql.sort.DescSort;
 import com.app.entity.repertory.RepertoryGoodsBatchEntity;
+import com.app.entity.repertory.RepertoryGoodsEntity;
+import com.app.util.PublicMethod;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -51,8 +53,17 @@ public class BatchAPI extends Result{
                 iDisplayStart = jsonObject.get(VALUE).getAsInt();  
             else if (jsonObject.get(NAME).getAsString().equals(I_DISPLAY_LENGTH))  
                 iDisplayLength = jsonObject.get(VALUE).getAsInt(); 
-            else if (jsonObject.get(NAME).getAsString().equals(RepertoryGoodsBatchEntity.GOODS_ID)){  
-            	sql.and(new EQCnd(RepertoryGoodsBatchEntity.GOODS_ID,jsonObject.get(VALUE).getAsString()));
+            else if (jsonObject.get(NAME).getAsString().equals(RepertoryGoodsBatchEntity.GOODS_BATCH_CODE)){  
+            	sql.and(new EQCnd(RepertoryGoodsBatchEntity.GOODS_BATCH_CODE,jsonObject.get(VALUE).getAsString()));
+            }else if (jsonObject.get(NAME).getAsString().equals(RepertoryGoodsEntity.CODE)){
+            	RepertoryGoodsEntity goods = new RepertoryGoodsEntity();
+            	goods = goods.setCode(jsonObject.get(VALUE).getAsString()).queryCustomCacheVo(0);
+            	if(!PublicMethod.isEmptyValue(goods.getGoodsId())){
+            		sql.and(new EQCnd(RepertoryGoodsBatchEntity.GOODS_ID,goods.getGoodsId()));
+            	}else{
+            		sql.and(new EQCnd(RepertoryGoodsBatchEntity.GOODS_ID,0));
+            	}
+            	
             }
     	}
     	
@@ -96,7 +107,7 @@ public class BatchAPI extends Result{
     		return success("删除成功");
     	}catch(Exception e){
     		logger.error("删除失败", e);
-    		return success("删除失败");
+    		return error(e.getMessage());
     	}
     	
     }
@@ -131,9 +142,25 @@ public class BatchAPI extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
     public String add(@RequestParam String aoData) throws Exception{
+    	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
     	RepertoryGoodsBatchEntity entity = new RepertoryGoodsBatchEntity();
-    	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
-    	logger.error("aoData="+aoData);
+    	entity.parse(jo);
+    	if(jo.has(RepertoryGoodsEntity.CODE)){
+    		RepertoryGoodsEntity goods = new RepertoryGoodsEntity();
+    		goods = goods.setCode(jo.get(RepertoryGoodsEntity.CODE).getAsString()).queryCustomCacheVo();
+    		if(goods == null ){
+    			return error("不存在的产品编码");
+    		}
+    		entity.setGoodsId(goods.getGoodsId());
+    	}
+    	
+    	if(PublicMethod.isEmptyStr(entity.getGoodsBatchCode())){
+    		return error("批次号不能为空");
+    	}
+    	
+    	if(PublicMethod.isEmptyValue(entity.getGoodsId())){
+    		return error("产品信息不能为空");
+    	}
     	
     	try{
     		entity.insert();

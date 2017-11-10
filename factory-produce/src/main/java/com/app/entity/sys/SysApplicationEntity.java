@@ -130,7 +130,7 @@ public class SysApplicationEntity extends CacheVo implements Comparable<SysAppli
 	 * 输出代码
 	 */
 	public static final String OUT_CODE = "out_code";
-	@Column
+	@Column(length=500)
     private String outCode;
 	
 	/**
