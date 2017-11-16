@@ -16,6 +16,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
@@ -86,7 +87,7 @@ public class SysUserEntity extends CacheVo  implements Serializable
 
     public static final String NUMBER = "number";
     @Column
-    @CustomCache(sort = 0,gorup={1})
+    @CustomCache(sort = 0,gorup=1)
     private String number;
 
     public static final String IDCARD = "idcard";
@@ -111,20 +112,16 @@ public class SysUserEntity extends CacheVo  implements Serializable
     @Expose(deserialize = true)
     private String role;
 
-    public SysUserEntity()
-    {
-    	this.createTime = new Date();
-    	this.operatorTime = this.createTime;
-    }
     
-    public SysUserEntity(String name)
-    {
-		super(name);
-    	this.createTime = new Date();
-    	this.operatorTime = this.createTime;
-    }
 
-    public SysUserEntity(SysUserEntity user)
+    public SysUserEntity(JdbcDao jdbcDao) {
+		super(jdbcDao);
+	}
+    
+   
+
+
+	public SysUserEntity(SysUserEntity user)
     {
         this.userName = user.getUserName();
         this.password = user.getPassword();
@@ -230,14 +227,14 @@ public class SysUserEntity extends CacheVo  implements Serializable
 	public String getRole() {
 		StringBuilder sb = new StringBuilder();
 		if(this.userId > 0){
-			List<SysUserRoleEntity> list = new SysUserRoleEntity().setUserId(this.userId).queryCustomCacheValue(0, null);
+			List<SysUserRoleEntity> list = new SysUserRoleEntity(this.jdbcDao).setUserId(this.userId).queryCustomCacheValue(0, null);
 			if(list != null && list.size() > 0){
 				
-				SysRoleEntity r = new SysRoleEntity();
+				SysRoleEntity r = new SysRoleEntity(this.jdbcDao);
 				r.setRoleId(list.get(0).getRoleId()).loadVo();
 				sb.append(r.getRoleName());
 				for(int i = 1,len = list.size();i<len;i++){
-					SysRoleEntity ri = new SysRoleEntity();
+					SysRoleEntity ri = new SysRoleEntity(this.jdbcDao);
 					ri.setRoleId(list.get(i).getRoleId()).loadVo();
 					sb.append(" ").append(ri.getRoleName());
 				}

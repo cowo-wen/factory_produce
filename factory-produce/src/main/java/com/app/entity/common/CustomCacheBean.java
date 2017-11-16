@@ -74,7 +74,11 @@ public class CustomCacheBean {
 		if(hashSetKey == null){
 			return "id";
 		}
-		return getFieldValue(hashSetKey).toString();
+		Object obj = getFieldValue(hashSetKey);
+		if(obj == null){
+			return "0";
+		}
+		return obj.toString();
 	}
 
 

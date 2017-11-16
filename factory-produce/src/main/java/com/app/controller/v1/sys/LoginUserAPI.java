@@ -13,6 +13,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,6 +42,7 @@ import com.app.util.StaticBean;
  */
 @RestController
 @RequestMapping("/v1/sys/loginuser")
+@Scope("prototype")//设置成多例
 public class LoginUserAPI extends Result{
     public static Log logger = LogFactory.getLog(LoginUserAPI.class);
     
@@ -68,18 +70,15 @@ public class LoginUserAPI extends Result{
     	
     	
     	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
-    	SysUserEntity user = new SysUserEntity();
+    	SysUserEntity user = new SysUserEntity(jdbcDao);
     	user.setUserId(userDetails.getUserId());
     	user.loadVo();
-    	logger.error("------1----------type="+userDetails.getType());
-    	userDetails.setType(user.getType());
-    	logger.error("------2----------type="+userDetails.getType());
     	int type = Integer.parseInt(terminalType);
     	List<SysRoleEntity> roleList = new ArrayList<SysRoleEntity>();
     	Map<String,String> currentRole = null;
     	List<SysApplicationEntity> list = null;
 		if(user.getType() == SysUserEntity.USER_ADMIN){
-			SysRoleEntity role = new SysRoleEntity();
+			SysRoleEntity role = new SysRoleEntity(jdbcDao);
 			role = role.setRoleCode(SysRoleEntity.ADMIN_CODE).queryCustomCacheVo();
 			currentRole = new HashMap<String,String>();
 			currentRole.put("role", String.valueOf(role.getRoleId()));
@@ -87,13 +86,13 @@ public class LoginUserAPI extends Result{
 			currentRole.put("time", String.valueOf(System.currentTimeMillis()));
 			currentRole.put("pc_index", role.getPcIndex());
 			currentRole.put("wc_index", role.getWxIndex());
-			list = new SysApplicationEntity().getListVO(new SQLWhere(new EQCnd(SysApplicationEntity.TERMINAL_TYPE,type)).and(new EQCnd(SysApplicationEntity.VALID, StaticBean.YES)).orderBy(new AscSort(SysApplicationEntity.SORT_CODE,SysApplicationEntity.APPLICATION_ID)));
+			list = new SysApplicationEntity(jdbcDao).getListVO(new SQLWhere(new EQCnd(SysApplicationEntity.TERMINAL_TYPE,type)).and(new EQCnd(SysApplicationEntity.VALID, StaticBean.YES)).orderBy(new AscSort(SysApplicationEntity.SORT_CODE,SysApplicationEntity.APPLICATION_ID)));
 		}else{
 			currentRole = redisAPI.hgetAll(session.getId()+":role:current:select");
-	    	List<SysUserRoleEntity> roles = new SysUserRoleEntity().setUserId(user.getUserId()).queryCustomCacheValue(0, null);
+	    	List<SysUserRoleEntity> roles = new SysUserRoleEntity(jdbcDao).setUserId(user.getUserId()).queryCustomCacheValue(0, null);
 	    	if(roles != null){
 	    		for(SysUserRoleEntity ur : roles){
-	    			SysRoleEntity r = new SysRoleEntity();
+	    			SysRoleEntity r = new SysRoleEntity(jdbcDao);
 	    			r.setRoleId(ur.getRoleId()).loadVo();
 	    			if(r.getValid() == StaticBean.YES){
 	    				roleList.add(r);
@@ -130,12 +129,13 @@ public class LoginUserAPI extends Result{
 	    	
 	    	list = new ArrayList<SysApplicationEntity>(); //获取角色应用
 	    	if(currentRole != null && currentRole.size() > 0){
-	    		List<SysRoleApplicationEntity> listRA = new SysRoleApplicationEntity().setRoleId(Long.parseLong(currentRole.get("role"))).queryCustomCacheValue(0,null);
+	    		List<SysRoleApplicationEntity> listRA = new SysRoleApplicationEntity(jdbcDao).setRoleId(Long.parseLong(currentRole.get("role"))).queryCustomCacheValue(0,null);
 	    		if(listRA != null){
 	    			for(SysRoleApplicationEntity ra : listRA){
-	    				SysApplicationEntity a = new SysApplicationEntity();
+	    				SysApplicationEntity a = new SysApplicationEntity(jdbcDao);
 	    				a.setApplicationId(ra.getApplicationId()).loadVo();
 	    				if(a.getTerminalType() == type && a.getValid() == StaticBean.YES){
+	    					logger.error(user.getUserId()+"-------------"+a.getName()+"|"+a.getApplicationCode());
 	    					list.add(a);
 	    				}
 	    			}
@@ -183,9 +183,9 @@ public class LoginUserAPI extends Result{
     	String key = session.getId()+":role:current:select";
     	RedisAPI redisAPI = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
     	if(id != null && id > 0){
-    		SysUserRoleEntity userRole = new SysUserRoleEntity().setUserId(userDetails.getUserId()).queryCustomCacheVo(0, id.toString());
+    		SysUserRoleEntity userRole = new SysUserRoleEntity(jdbcDao).setUserId(userDetails.getUserId()).queryCustomCacheVo(0, id.toString());
     		if(userRole != null &&  !PublicMethod.isEmptyValue(userRole.getId()) ){
-    			SysRoleEntity role = new  SysRoleEntity();
+    			SysRoleEntity role = new  SysRoleEntity(jdbcDao);
     			role.setRoleId(userRole.getRoleId()).loadVo();
     			redisAPI.hSet(key,new String[]{"role","time"},new String[]{String.valueOf(userRole.getRoleId()),String.valueOf(System.currentTimeMillis())});
     			redisAPI.hSet(key,new String[]{"role","time","pc_index","wc_index","name"},new String[]{String.valueOf(userRole.getRoleId()),String.valueOf(System.currentTimeMillis()),role.getPcIndex(),role.getWxIndex(),role.getRoleName()});

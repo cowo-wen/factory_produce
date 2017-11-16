@@ -14,6 +14,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
@@ -60,18 +61,13 @@ public class SysRoleApplicationEntity extends CacheVo implements Serializable {
 	@Column
 	private Date operatorTime;
 
-	public SysRoleApplicationEntity() {
-		this.createTime = new Date();
-		this.operatorTime = this.createTime;
+	
+	
+	public SysRoleApplicationEntity(JdbcDao jdbcDao) {
+		super(jdbcDao);
+		// TODO Auto-generated constructor stub
 	}
 
-	public SysRoleApplicationEntity(String name)
-    {
-		super(name);
-    	this.createTime = new Date();
-    	this.operatorTime = this.createTime;
-    }
-	
 	public Long getRoleId() {
 		return roleId;
 	}

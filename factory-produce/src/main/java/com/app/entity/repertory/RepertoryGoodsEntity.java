@@ -14,6 +14,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
@@ -176,12 +177,10 @@ public class RepertoryGoodsEntity extends CacheVo  implements Serializable
     
     
     
-	public RepertoryGoodsEntity() {
-		super();
-	}
-
-	public RepertoryGoodsEntity(String redisObj) {
-		super(redisObj);
+	
+	public RepertoryGoodsEntity(JdbcDao jdbcDao) {
+		super(jdbcDao);
+		// TODO Auto-generated constructor stub
 	}
 
 	public Long getGoodsId() {

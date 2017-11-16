@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,6 +29,7 @@ import com.google.gson.JsonParser;
  */
 @RestController
 @RequestMapping("/v1/permission/repertory/bill_detail")
+@Scope("prototype")//设置成多例
 public class BillDetailAPI extends Result{
     public static Log logger = LogFactory.getLog(BillDetailAPI.class);
     
@@ -56,7 +58,7 @@ public class BillDetailAPI extends Result{
     	}
     	
     	logger.error(aoData);
-    	RepertoryGoodsBillDetailEntity entity = new RepertoryGoodsBillDetailEntity();
+    	RepertoryGoodsBillDetailEntity entity = new RepertoryGoodsBillDetailEntity(jdbcDao);
     	
     	entity.outPut(RepertoryGoodsBillDetailEntity.TYPE,RepertoryGoodsBillDetailEntity.NAME,RepertoryGoodsBillDetailEntity.CODE,RepertoryGoodsBillDetailEntity.GOODS_BATCH_CODE);
     	List<RepertoryGoodsBillDetailEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);

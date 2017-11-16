@@ -14,6 +14,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
 
 /**
@@ -95,8 +96,15 @@ public class SysLogEntity extends CacheVo implements Serializable
     private Date operatorTime;
     
     
+	
+	
 
-    public int getType() {
+    public SysLogEntity(JdbcDao jdbcDao) {
+		super(jdbcDao);
+		// TODO Auto-generated constructor stub
+	}
+
+	public int getType() {
 		return type;
 	}
 
@@ -104,18 +112,7 @@ public class SysLogEntity extends CacheVo implements Serializable
 		this.type = type;
 	}
 
-	public SysLogEntity()
-    {
-    	this.createTime = new Date();
-    	this.operatorTime = this.createTime;
-    }
 	
-	public SysLogEntity(String name)
-    {
-		super(name);
-    	this.createTime = new Date();
-    	this.operatorTime = this.createTime;
-    }
 
 	public Long getLogId() {
 		return logId;

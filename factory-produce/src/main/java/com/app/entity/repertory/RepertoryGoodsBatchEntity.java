@@ -15,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
@@ -120,14 +121,12 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Comparable<Re
     private String code;
    
     
-    public RepertoryGoodsBatchEntity() {
-		super();
-	}
+   
 
 
 
-	public RepertoryGoodsBatchEntity(String redisObj) {
-		super(redisObj);
+	public RepertoryGoodsBatchEntity(JdbcDao jdbcDao) {
+		super(jdbcDao);
 	}
 
 
@@ -233,7 +232,7 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Comparable<Re
 
 	public String getName() {
 		if(this.goodsId > 0){
-			RepertoryGoodsEntity goods = new RepertoryGoodsEntity();
+			RepertoryGoodsEntity goods = new RepertoryGoodsEntity(this.jdbcDao);
 			goods.setGoodsId(this.goodsId).loadVo();
 			this.name = goods.getName();
 			this.type = goods.getType();
@@ -277,7 +276,7 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Comparable<Re
 
 	@Override
 	public int delete() throws Exception {
-		RepertoryGoodsBatchEntity batch =new RepertoryGoodsBatchEntity();
+		RepertoryGoodsBatchEntity batch =new RepertoryGoodsBatchEntity(this.jdbcDao);
 		batch.setGoodsBatchId(goodsBatchId).loadVo();
 		if(batch.inventory != 0 || batch.locking != 0){
 			throw new Exception("库存不为空，不能删除");
@@ -295,16 +294,14 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Comparable<Re
 		if(PublicMethod.isEmptyValue(this.goodsId)){
 			throw new Exception("产品信息参数不能为空");
 		}
-		RepertoryGoodsEntity entity =new RepertoryGoodsEntity();
-		entity.setJdbcDao(getJdbcDao());
+		RepertoryGoodsEntity entity =new RepertoryGoodsEntity(this.jdbcDao);
 		entity.setGoodsId(goodsId).loadVo();
 		if(PublicMethod.isEmptyStr(entity.getCode())){
 			throw new Exception("不存在的产品信息");
 		}
 		
 		
-		RepertoryGoodsBatchEntity batch =new RepertoryGoodsBatchEntity();
-		batch.setJdbcDao(getJdbcDao());
+		RepertoryGoodsBatchEntity batch =new RepertoryGoodsBatchEntity(this.jdbcDao);
 		batch.setGoodsBatchId(goodsBatchId).loadVo();
 		if(PublicMethod.isEmptyStr(batch.goodsBatchCode)){
 			throw new Exception("不存在的批次信息");
@@ -336,8 +333,7 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Comparable<Re
 		if(PublicMethod.isEmptyValue(this.goodsId)){
 			throw new Exception("产品信息参数不能为空");
 		}
-		RepertoryGoodsEntity entity =new RepertoryGoodsEntity();
-		entity.setJdbcDao(getJdbcDao());
+		RepertoryGoodsEntity entity =new RepertoryGoodsEntity(this.jdbcDao);
 		entity.setGoodsId(goodsId).loadVo();
 		if(PublicMethod.isEmptyStr(entity.getCode())){
 			throw new Exception("不存在的产品信息");

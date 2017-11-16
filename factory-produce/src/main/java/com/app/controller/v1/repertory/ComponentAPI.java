@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -29,6 +30,7 @@ import com.google.gson.JsonParser;
  */
 @RestController
 @RequestMapping("/v1/permission/repertory/component")
+@Scope("prototype")//设置成多例
 public class ComponentAPI extends Result{
     public static Log logger = LogFactory.getLog(ComponentAPI.class);
     
@@ -57,7 +59,7 @@ public class ComponentAPI extends Result{
     	}
     	
     	logger.error(aoData);
-    	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity();
+    	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity(jdbcDao);
     	
     	entity.outPut(RepertoryGoodsComponentEntity.NAME,RepertoryGoodsComponentEntity.TYPE,RepertoryGoodsComponentEntity.CODE);
     	List<RepertoryGoodsComponentEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
@@ -83,14 +85,14 @@ public class ComponentAPI extends Result{
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
     public String vo(@PathVariable("id") Long id) throws Exception{
-    	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity();
+    	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity(jdbcDao);
     	entity.setGoodsComponentId(id).loadVo();
         return success(entity);
     }
 
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
     public String delete(@PathVariable("id") Long id) {
-    	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity();
+    	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity(jdbcDao);
     	try{
     		entity.setGoodsComponentId(id).delete();
     		return success("删除成功");
@@ -108,7 +110,7 @@ public class ComponentAPI extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
     public String update(@RequestParam String aoData) throws Exception{
-    	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity();
+    	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity(jdbcDao);
     	logger.error("-------"+aoData);
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
     	
@@ -131,7 +133,7 @@ public class ComponentAPI extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
     public String add(@RequestParam String aoData) throws Exception{
-    	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity();
+    	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	logger.error("aoData="+aoData);
     	

@@ -18,7 +18,6 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 
 import com.app.config.SysConfigProperties;
 import com.app.entity.sys.SysLogEntity;
-import com.app.util.RedisAPI;
 
 /**
  * 功能说明：
@@ -55,7 +54,7 @@ public class LoginFailHandler implements  AuthenticationFailureHandler {
 
 	@Override
 	public void onAuthenticationFailure(HttpServletRequest request,HttpServletResponse response,AuthenticationException exception)throws IOException, ServletException {   
-	        SysLogEntity sysLogEntity = new SysLogEntity(RedisAPI.REDIS_CORE_DATABASE);
+	        SysLogEntity sysLogEntity = new SysLogEntity(null);
 	        
 	        sysLogEntity.setUserId(0L);
 	        sysLogEntity.setApplicationId(1L);

@@ -30,7 +30,7 @@ public class LoginSuccessHandler extends  SavedRequestAwareAuthenticationSuccess
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {    
         //获得授权后可得到用户信息   可使用SUserService进行数据库操作  
         SysUserEntity userDetails = (SysUserEntity)authentication.getPrincipal();    
-        SysLogEntity sysLogEntity = new SysLogEntity();
+        SysLogEntity sysLogEntity = new SysLogEntity(null);
         sysLogEntity.setUserId(userDetails.getUserId());
         sysLogEntity.setApplicationId(1L);
         sysLogEntity.setIp(getIpAddress(request));

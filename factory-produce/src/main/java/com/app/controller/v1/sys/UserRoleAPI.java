@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,6 +33,7 @@ import com.google.gson.JsonParser;
  */
 @RestController
 @RequestMapping("/v1/permission/sys/user_role")
+@Scope("prototype")//设置成多例
 public class UserRoleAPI extends Result{
     public static Log logger = LogFactory.getLog(UserRoleAPI.class);
     
@@ -44,7 +46,7 @@ public class UserRoleAPI extends Result{
     		return error("无效的角色id");
     	}
     	
-    	SysUserEntity user = new SysUserEntity();
+    	SysUserEntity user = new SysUserEntity(jdbcDao);
     	user.setUserId(id).loadVo();
     	if(user.getType() == 0){
     		return error("不存在的用户");
@@ -52,7 +54,7 @@ public class UserRoleAPI extends Result{
     		return error("超级管理员不用分配权限");
     	}
     	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
-    	SysUserEntity userLogin = new SysUserEntity();
+    	SysUserEntity userLogin = new SysUserEntity(jdbcDao);
     	userLogin.setUserId(userDetails.getUserId()).loadVo();//查询登录的用户信息
     	String sql ="";
     	if(userLogin.getType() == SysUserEntity.USER_ADMIN){//管理员的角色，可以获取所有的角色
@@ -75,62 +77,65 @@ public class UserRoleAPI extends Result{
    
     
     @RequestMapping(method = { RequestMethod.POST },value="/append")
-    public String append(@RequestParam String aoData) throws Exception{
+    public String append(@RequestParam String aoData) {
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
     	long userId = jo.get("user_id").getAsLong();
     	String roleids = "";
     	if(jo.has("role_ids")){
     		roleids = jo.get("role_ids").getAsString();
     	}
-    	
-    	
-    	
-    	SysUserEntity user = new SysUserEntity();
-    	user.setUserId(userId).loadVo();
-    	if(PublicMethod.isEmptyStr(user.getType() == 0)){
-    		return error("用户不存在");
-    	}else{
-    		if(user.getLoginName().equals("admin")){
-    			return error("超级管理员不用添加角色");
-    		}
+    	SysUserRoleEntity sysUserRoleEntity = new SysUserRoleEntity(jdbcDao);
+    	try{
+    		SysUserEntity user = new SysUserEntity(jdbcDao);
+        	user.setUserId(userId).loadVo();
+        	if(PublicMethod.isEmptyStr(user.getType() == 0)){
+        		return error("用户不存在");
+        	}else{
+        		if(user.getLoginName().equals("admin")){
+        			return error("超级管理员不用添加角色");
+        		}
+        	}
+        	List<Long> listRoleIds = new ArrayList<Long>();
+        	if(!PublicMethod.isEmptyStr(roleids)){
+        		String[] ids = roleids.split(",");
+        		for(int i=0,len =ids.length ;i<len;i++){
+        			try{
+        				listRoleIds.add(Long.parseLong(ids[i]));
+        			}catch(Exception e){
+        				logger.error("输换数据类型错误",e);
+        			}
+        		}
+        		ids = null;
+        	}
+        	
+        	
+        	
+        	List<SysUserRoleEntity> listRA = sysUserRoleEntity.getListVO(new SQLWhere(new EQCnd("user_id", userId)));
+        	for(SysUserRoleEntity userRole : listRA){
+        		if(listRoleIds.indexOf(userRole.getRoleId()) == -1){
+        			userRole.delete();
+        		}else{
+        			listRoleIds.remove(userRole.getRoleId());
+        		}
+        	}
+        	
+        	for(Long roleId : listRoleIds){
+        		SysRoleEntity role = new SysRoleEntity(jdbcDao);
+        		role.setRoleId(roleId).loadVo();
+        		
+        		if(PublicMethod.isEmptyStr(role.getRoleCode()) || role.getRoleCode().equals(SysRoleEntity.ADMIN_CODE))
+        			continue;
+        		SysUserRoleEntity userRole = new SysUserRoleEntity(jdbcDao);
+        		userRole.setRoleId(roleId);
+        		userRole.setUserId(userId);
+        		userRole.insert();
+        	}
+            return success("分配成功");
+    	}catch(Exception e){
+    		return error("分配失败");
     	}
-    	List<Long> listRoleIds = new ArrayList<Long>();
-    	if(!PublicMethod.isEmptyStr(roleids)){
-    		String[] ids = roleids.split(",");
-    		for(int i=0,len =ids.length ;i<len;i++){
-    			try{
-    				listRoleIds.add(Long.parseLong(ids[i]));
-    			}catch(Exception e){
-    				logger.error("输换数据类型错误",e);
-    			}
-    		}
-    		ids = null;
-    	}
     	
     	
-    	
-    	List<SysUserRoleEntity> listRA = new SysUserRoleEntity().getListVO(new SQLWhere(new EQCnd("user_id", userId)));
-    	for(SysUserRoleEntity userRole : listRA){
-    		if(listRoleIds.indexOf(userRole.getRoleId()) == -1){
-    			userRole.delete();
-    		}else{
-    			listRoleIds.remove(userRole.getRoleId());
-    		}
-    	}
-    	
-    	for(Long roleId : listRoleIds){
-    		SysRoleEntity role = new SysRoleEntity();
-    		role.setRoleId(roleId).loadVo();
-    		
-    		if(PublicMethod.isEmptyStr(role.getRoleCode()) || role.getRoleCode().equals(SysRoleEntity.ADMIN_CODE))
-    			continue;
-    		SysUserRoleEntity userRole = new SysUserRoleEntity();
-    		userRole.setRoleId(roleId);
-    		userRole.setUserId(userId);
-    		userRole.insert();
-    	}
-    	
-        return success("分配成功");
     }
     
    

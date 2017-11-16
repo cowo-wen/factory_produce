@@ -14,6 +14,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.TableCache;
 
@@ -65,18 +66,12 @@ public class SysConfigEntity extends CacheVo  implements Serializable
     @Column
     private Date operatorTime;
 
-    public SysConfigEntity()
-    {
-    	this.createTime = new Date();
-    	this.operatorTime = this.createTime;
-    }
-    
-    public SysConfigEntity(String name)
-    {
-		super(name);
-    	this.createTime = new Date();
-    	this.operatorTime = this.createTime;
-    }
+   
+
+	public SysConfigEntity(JdbcDao jdbcDao) {
+		super(jdbcDao);
+		// TODO Auto-generated constructor stub
+	}
 
 	public Long getId() {
 		return id;

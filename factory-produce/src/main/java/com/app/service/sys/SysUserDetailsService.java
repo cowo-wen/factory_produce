@@ -15,10 +15,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.app.bean.SysUserDetails;
+import com.app.dao.JdbcDao;
 import com.app.entity.sys.SysAccountEntity;
 import com.app.entity.sys.SysUserEntity;
 import com.app.entity.sys.SysUserRoleEntity;
-import com.app.util.RedisAPI;
 
 /**
  * 功能说明：
@@ -29,16 +29,20 @@ import com.app.util.RedisAPI;
 public class SysUserDetailsService implements UserDetailsService
 {
     public static Log logger = LogFactory.getLog(SysUserDetailsService.class);
+    
+    private JdbcDao dao = null;
+    
     public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException
     {
-        SysUserEntity user = new SysUserEntity(RedisAPI.REDIS_CORE_DATABASE);
+        SysUserEntity user = new SysUserEntity(dao);
         try
         {
         	userName = userName.trim().replaceAll("--", "").replaceAll("(?i) or ", "");
         	user.setLoginName(userName);
         	List<?> list =user.queryCustomCacheValue(0, null);
         	if(list.size() == 0){
-        		SysAccountEntity account = new SysAccountEntity(RedisAPI.REDIS_CORE_DATABASE);
+        		SysAccountEntity account = new SysAccountEntity(dao);
+        		account.setOtherAccount(userName);
             	List<?> accountList = account.queryCustomCacheValue(0, null);
             	if(accountList == null || accountList.size() == 0){
             		return null;
@@ -53,13 +57,13 @@ public class SysUserDetailsService implements UserDetailsService
             
             if(user.getType() == SysUserEntity.USER_ADMIN){
             	roles =  new ArrayList<SysUserRoleEntity>();
-            	SysUserRoleEntity ur = new SysUserRoleEntity();
+            	SysUserRoleEntity ur = new SysUserRoleEntity(dao);
                 ur.setId(1L);
                 ur.setRoleId(1L);
                 ur.setUserId(1L);
                 roles.add(ur);
             }else{
-            	SysUserRoleEntity ur = new SysUserRoleEntity();
+            	SysUserRoleEntity ur = new SysUserRoleEntity(dao);
             	ur.setUserId(user.getUserId());
             	roles =ur.queryCustomCacheValue(0, null);
             	logger.error("----------------获取角色数据:"+roles.size());

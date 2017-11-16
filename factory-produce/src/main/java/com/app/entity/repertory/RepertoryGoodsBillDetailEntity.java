@@ -15,7 +15,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
+import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
 import com.app.util.PublicMethod;
 import com.google.gson.annotations.Expose;
@@ -43,10 +45,13 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
+    @CustomCache(hashKey=true,sort=1)
     private Long billDetailId;
+    
     
     public static final String GOODS_BILL_ID = "goods_bill_id";
     @Column
+    @CustomCache( sort = 0)
     private Long goodsBillId;
     
     /**
@@ -110,12 +115,12 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
     @Expose(deserialize = true)
     private String code;
 
-	public RepertoryGoodsBillDetailEntity() {
-		super();
-	}
-
-	public RepertoryGoodsBillDetailEntity(String redisObj) {
-		super(redisObj);
+	
+    
+    
+	public RepertoryGoodsBillDetailEntity(JdbcDao jdbcDao) {
+		super(jdbcDao);
+		// TODO Auto-generated constructor stub
 	}
 
 	public Date getCreateTime() {
@@ -148,8 +153,9 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 		return goodsBillId;
 	}
 
-	public void setGoodsBillId(Long goodsBillId) {
+	public RepertoryGoodsBillDetailEntity setGoodsBillId(Long goodsBillId) {
 		this.goodsBillId = goodsBillId;
+		return this;
 	}
 
 	public Long getGoodsBatchId() {
@@ -188,7 +194,7 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 
 	public String getName() {
 		if(this.goodsId > 0){
-			RepertoryGoodsEntity goods = new RepertoryGoodsEntity();
+			RepertoryGoodsEntity goods = new RepertoryGoodsEntity(this.jdbcDao);
 			goods.setGoodsId(this.goodsId).loadVo();
 			this.name = goods.getName();
 			this.type = goods.getType();
@@ -203,7 +209,7 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 
 	public String getGoodsBatchCode() {
 		if(this.goodsBatchId > 0){
-			RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity();
+			RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(this.jdbcDao);
 			batch.setGoodsBatchId(this.goodsBatchId).loadVo();
 			this.goodsBatchCode = batch.getGoodsBatchCode();
 		}
@@ -225,7 +231,7 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 
 	@Override
 	public long insert() throws Exception {
-		if(type == null || type < 0){
+		if(type == null){
 			throw new Exception("类型不能为空");
 		}
 		
@@ -233,8 +239,10 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 			case RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_CHECK://盘点
 				break;
 			case RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_APPLY://申领 批次锁定-
-				RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity();
-				batch.setJdbcDao(getJdbcDao());
+				RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(this.jdbcDao);
+				if(PublicMethod.isEmptyValue(goodsBatchId)){
+					throw new Exception("申领表的批次为空");
+				}
 				batch.setGoodsBatchId(goodsBatchId).loadVo();
 				batch.setInventory(batch.getInventory()-number);
 				batch.setLocking(batch.getLocking() + number);
@@ -255,7 +263,7 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 	@Override
 	public int delete() throws Exception {
 		loadVo();
-		if(type == null || type < 0){
+		if(type == null){
 			throw new Exception("类型不能为空");
 		}
 		
@@ -263,8 +271,7 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 			case RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_CHECK://盘点
 				break;
 			case RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_APPLY://申领 批次锁定-
-				RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity();
-				batch.setJdbcDao(getJdbcDao());
+				RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(this.jdbcDao);
 				batch.setGoodsBatchId(goodsBatchId).loadVo();
 				batch.setInventory(batch.getInventory()+number);
 				batch.setLocking(batch.getLocking() - number);
@@ -285,10 +292,10 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 
 	@Override
 	public int update(String... fieldName) throws Exception {
-		if(type == null || type < 0){
+		if(type == null){
 			throw new Exception("类型不能为空");
 		}
-		RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity();
+		RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(this.jdbcDao);
 		detail.setBillDetailId(billDetailId);
 		detail.loadVo();
 		if(PublicMethod.isEmptyValue(detail.getGoodsBillId())){
@@ -298,8 +305,7 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 			case RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_CHECK://盘点
 				break;
 			case RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_APPLY://申领 批次锁定-
-				RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity();
-				batch.setJdbcDao(getJdbcDao());
+				RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(this.jdbcDao);
 				batch.setGoodsBatchId(detail.goodsBatchId).loadVo();
 				batch.setInventory(batch.getInventory()-number+detail.number);
 				batch.setLocking(batch.getLocking() + number-detail.number);

@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -31,6 +32,7 @@ import com.google.gson.JsonParser;
  */
 @RestController
 @RequestMapping("/v1/permission/sys/application")
+@Scope("prototype")//设置成多例
 public class ApplicationAPI extends Result {
     public static Log logger = LogFactory.getLog(ApplicationAPI.class);
     
@@ -57,7 +59,7 @@ public class ApplicationAPI extends Result {
     	}
     	
     	logger.error(aoData);
-    	SysApplicationEntity entity = new SysApplicationEntity();
+    	SysApplicationEntity entity = new SysApplicationEntity(jdbcDao);
     	
     	SQLWhere sql = new SQLWhere().orderBy(new AscSort(SysApplicationEntity.SORT_CODE));
     	
@@ -85,24 +87,31 @@ public class ApplicationAPI extends Result {
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
     public String vo(@PathVariable("id") Long id) throws Exception{
-    	SysApplicationEntity entity = new SysApplicationEntity();
+    	SysApplicationEntity entity = new SysApplicationEntity(jdbcDao);
     	entity.setApplicationId(id);
     	entity.loadVo();
         return success(entity);
     }
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
-    public String delete(@PathVariable("id") Long id) throws Exception{
-    	SysApplicationEntity app = new SysApplicationEntity();
+    public String delete(@PathVariable("id") Long id) {
+    	SysApplicationEntity app = new SysApplicationEntity(jdbcDao);
+    	app.useTransaction();
     	app.setApplicationId(id);
-    	app.deleteLinkChild(SysApplicationEntity.PARENT_ID);
-    	List<SysRoleApplicationEntity> list = new SysRoleApplicationEntity().getListVO(new SQLWhere(new NotINCnd(SysApplicationEntity.APPLICATION_ID, " select application_id from t_sys_application ")));
-    	if(list != null && list.size() > 0){
-    		for(SysRoleApplicationEntity ra : list){
-        		ra.delete();
+    	try{
+    		app.deleteLinkChild(SysApplicationEntity.PARENT_ID);
+        	SysRoleApplicationEntity roleApp = new SysRoleApplicationEntity(jdbcDao);
+        	List<SysRoleApplicationEntity> list = roleApp.getListVO(new SQLWhere(new NotINCnd(SysApplicationEntity.APPLICATION_ID, " select application_id from t_sys_application ")));
+        	if(list != null && list.size() > 0){
+        		for(SysRoleApplicationEntity ra : list){
+            		ra.delete();
+            	}
         	}
+        	return success("删除成功");
+    	}catch(Exception e){
+    		return error("删除失败");
     	}
-    	return success("删除成功");
+    	
     }
     
    
@@ -112,7 +121,7 @@ public class ApplicationAPI extends Result {
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
     public String update(@RequestParam String aoData) throws Exception{
-    	SysApplicationEntity entity = new SysApplicationEntity();
+    	SysApplicationEntity entity = new SysApplicationEntity(jdbcDao);
     	logger.error("-------"+aoData);
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
     	jo.remove(SysApplicationEntity.APPLICATION_CODE);
@@ -168,7 +177,7 @@ public class ApplicationAPI extends Result {
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
     public String add(@RequestParam String aoData) throws Exception{
-    	SysApplicationEntity entity = new SysApplicationEntity();
+    	SysApplicationEntity entity = new SysApplicationEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	
     	if(PublicMethod.isEmptyStr(entity.getName())){
@@ -208,7 +217,7 @@ public class ApplicationAPI extends Result {
     	}
     	try{
     		if(entity.getParentId() > 0){
-    			SysApplicationEntity entity2 = new SysApplicationEntity();
+    			SysApplicationEntity entity2 = new SysApplicationEntity(jdbcDao);
     			entity2.setApplicationId(entity.getParentId());
     			entity2.loadVo();
     			entity.setParentApplicationCode(entity2.getApplicationCode());

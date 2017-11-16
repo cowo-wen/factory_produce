@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -29,6 +30,7 @@ import com.google.gson.JsonParser;
  */
 @RestController
 @RequestMapping("/v1/permission/sys/log")
+@Scope("prototype")//设置成多例
 public class LogAPI extends Result{
     public static Log logger = LogFactory.getLog(LogAPI.class);
     
@@ -71,7 +73,7 @@ public class LogAPI extends Result{
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
     public String delete(@PathVariable("id") Long id) throws Exception{
-    	SysLogEntity log = new SysLogEntity();
+    	SysLogEntity log = new SysLogEntity(jdbcDao);
     	log.setLogId(id);
     	log.delete();
         return success("删除成功");
@@ -88,7 +90,7 @@ public class LogAPI extends Result{
     public String deleteBatch(@PathVariable(name="ids",required=true) String ids) throws Exception{
     	String [] logIds = ids.split(",");
     	for(String id : logIds){
-    		SysLogEntity log = new SysLogEntity();
+    		SysLogEntity log = new SysLogEntity(jdbcDao);
     		log.setLogId(Long.parseLong(id));
     		log.delete();
     	}

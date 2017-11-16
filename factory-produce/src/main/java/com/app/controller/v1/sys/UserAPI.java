@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -34,6 +35,7 @@ import com.xx.util.string.MD5;
  */
 @RestController
 @RequestMapping("/v1/permission/sys/user")
+@Scope("prototype")//设置成多例
 public class UserAPI extends Result{
     public static Log logger = LogFactory.getLog(UserAPI.class);
     
@@ -63,7 +65,7 @@ public class UserAPI extends Result{
             }
     	}
     	
-    	SysUserEntity entity = new SysUserEntity();
+    	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.outPut("role");
     	List<SysUserEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
     	
@@ -86,7 +88,7 @@ public class UserAPI extends Result{
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
     public String vo(@PathVariable("id") Long id) throws Exception{
-    	SysUserEntity entity = new SysUserEntity();
+    	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.setUserId(id);
     	entity.loadVo();
         return success(entity);
@@ -94,14 +96,17 @@ public class UserAPI extends Result{
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
     public String delete(@PathVariable("id") Long id) {
-    	SysUserEntity entity = new SysUserEntity();
+    	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.setUserId(id);
     	entity.loadVo();
     	if(!PublicMethod.isEmptyStr(entity.getLoginName()) && entity.getLoginName().equals(SysUserEntity.ADMIN_USER_NAME)){
     		return error("超级用户不能删除");
     	}else{
+    		
+    		entity.useTransaction();
     		try {
-				List<SysUserRoleEntity>  list = new SysUserRoleEntity().setUserId(id).queryCustomCacheValue(0, null);
+    			SysUserRoleEntity sur = new SysUserRoleEntity(jdbcDao);
+				List<SysUserRoleEntity>  list = sur.setUserId(id).queryCustomCacheValue(0, null);
 				entity.delete();
 				if(list != null){
 					for(SysUserRoleEntity ur : list){
@@ -125,7 +130,7 @@ public class UserAPI extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
     public String update(@RequestParam String aoData) throws Exception{
-    	SysUserEntity entity = new SysUserEntity();
+    	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	if(PublicMethod.isEmptyStr(entity.getUserName())){
     		return error("人员名称不能为空");
@@ -167,7 +172,7 @@ public class UserAPI extends Result{
      */
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/managePW")
     public String managePW(@RequestParam String aoData) throws Exception{
-    	SysUserEntity entity = new SysUserEntity();
+    	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	
     	if(PublicMethod.isEmptyStr(entity.getPassword()) || entity.getPassword().length() != 32){
@@ -192,7 +197,7 @@ public class UserAPI extends Result{
      */
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/updatePW")
     public String updatePW(@RequestParam String aoData) throws Exception{
-    	SysUserEntity entity = new SysUserEntity();
+    	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	if(PublicMethod.isEmptyStr(entity.getPassword()) || entity.getPassword().length() != 32){
     		return error("密码不能为空");
@@ -209,7 +214,7 @@ public class UserAPI extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
     public String add(@RequestParam String aoData) throws Exception{
-    	SysUserEntity entity = new SysUserEntity();
+    	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	if(PublicMethod.isEmptyStr(entity.getUserName())){
     		return error("人员名称不能为空");

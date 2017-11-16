@@ -21,6 +21,7 @@ import javax.persistence.Table;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Service;
 
 import com.app.dao.JdbcDao;
@@ -42,7 +43,7 @@ import com.xx.util.string.Format;
  * @author chenwen 2017-8-11
  */
 @Service
-public class CacheVo {
+public class CacheVo implements ApplicationContextAware{
 	public static Log logger = LogFactory.getLog(CacheVo.class);
 	
 	private static final String ID="id";
@@ -80,13 +81,11 @@ public class CacheVo {
 	private transient  String redisObj = null;
 	
 	//@Expose(deserialize=false,serialize=false)
-	private transient  String daoName;
 	
 	private transient  String[] outPutFields;
 	
-	private transient JdbcDao jdbcDao;
+	protected transient JdbcDao jdbcDao;
 	
-	private transient boolean autoCommit = true;
 	
 	
 	public static final String CREATE_TIME = "create_time";
@@ -95,14 +94,12 @@ public class CacheVo {
 	
 	
 	
-	private transient int constructionType = 0;
+	private transient int constructionType = 0;//构造方法类型
 	
 
-    
-
 	
 
-	public synchronized static void setApplicationContext(ApplicationContext context) {
+	public synchronized void setApplicationContext(ApplicationContext context) {
     	if(applicationContext == null){
     		applicationContext = context;
     	}
@@ -110,30 +107,11 @@ public class CacheVo {
 	
 	public CacheVo() {
 		super();
-		this.daoName = "jdbcDao";
 		this.redisObj = RedisAPI.REDIS_CORE_DATABASE;
 	}
 	
-	public CacheVo(String redisObj,String daoSoure) {
-		super();
-		
-		if(PublicMethod.isEmptyStr(redisObj)){
-			this.redisObj = RedisAPI.REDIS_CORE_DATABASE;
-		}else{
-			this.redisObj = redisObj;
-		}
-		
-		if(PublicMethod.isEmptyStr(daoSoure)){
-			daoName = "jdbcDao";
-		}else{
-			daoName = daoSoure;
-		}
-		constructionType = 2;
-	}
-
 	public CacheVo(String redisObj) {
 		super();
-		this.daoName = "jdbcDao";
 		if(PublicMethod.isEmptyStr(redisObj)){
 			this.redisObj = RedisAPI.REDIS_CORE_DATABASE;
 		}else{
@@ -142,22 +120,62 @@ public class CacheVo {
 		constructionType = 1;
 	}
 	
-	/**
-	 * 使用事务
-	 */
-	public void useTransaction() {
-		this.autoCommit = false;
-	}
-
-	public void setJdbcDao(JdbcDao jdbcDao) {
+	public CacheVo(JdbcDao jdbcDao) {
+		super();
 		this.jdbcDao = jdbcDao;
-		useTransaction();
+		this.redisObj = RedisAPI.REDIS_CORE_DATABASE;
+		constructionType = 2;
 	}
 	
-	public synchronized JdbcDao getJdbcDao(){
-		if(PublicMethod.isEmptyStr(daoName)) daoName = "jdbcDao";
+	public CacheVo(String redisObj,JdbcDao jdbcDao) {
+		super();
+		
+		if(PublicMethod.isEmptyStr(redisObj)){
+			this.redisObj = RedisAPI.REDIS_CORE_DATABASE;
+		}else{
+			this.redisObj = redisObj;
+		}
+		this.jdbcDao = jdbcDao;
+		constructionType = 3;
+	}
+
+	
+	
+	/**
+	 * 使用事务
+	 * 调用该方法时，处理结束一定要调提交或回滚事务
+	 */
+	public void useTransaction() {
+		getJdbcDao().useTransaction();
+	}
+	
+	/**
+	 * 提交事务
+	 * @param status
+	 */
+	public void commit(){
+		if(jdbcDao != null){
+			jdbcDao.commit();
+		}
+	}
+	
+	/**
+	 * 回滚事务
+	 * @param status
+	 */
+	public void rollback(){
+		if(jdbcDao != null){
+			jdbcDao.rollback();
+		}
+	}
+
+	//public void setJdbcDao(JdbcDao jdbcDao) {
+	//	this.jdbcDao = jdbcDao;
+	//}
+	
+	private synchronized JdbcDao getJdbcDao(){
 		if(jdbcDao == null){
-			jdbcDao = (JdbcDao)applicationContext.getBean(daoName);
+			jdbcDao = (JdbcDao)applicationContext.getBean("jdbcDao");
 		}
 		return jdbcDao;
 	}
@@ -172,10 +190,9 @@ public class CacheVo {
 			}else if(constructionType == 1){
 				vo = (T) this.getClass().getConstructor(String.class).newInstance(redisObj);
 			}else if(constructionType == 2){
-				vo = (T) this.getClass().getConstructor(String.class,String.class).newInstance(redisObj,jdbcDao);
-			}
-			if(!autoCommit){
-				vo.setJdbcDao(jdbcDao);
+				vo = (T) this.getClass().getConstructor(JdbcDao.class).newInstance(jdbcDao);
+			}else if(constructionType == 3){
+				vo = (T) this.getClass().getConstructor(String.class,JdbcDao.class).newInstance(redisObj,jdbcDao);
 			}
 		} catch (Exception e) {
 			logger.error("反映创建对象失败="+this.getClass(), e);
@@ -558,6 +575,14 @@ public class CacheVo {
 		return mapperVO(getJdbcDao().getList(sql.toString()));
 	}
 	
+	public List<Map<String, Object>> getListVO(String sql,int page ,int row,SQLWhere where){
+		row = row > 10000 || row <= 0 ? 10000:row;
+		long count = page;
+		StringBuilder querySql = new StringBuilder("select * from (").append(sql).append(") as t ").append(where.toString()).append(" limit ").append(count).append(",").append(row);
+		logger.error(querySql.toString());
+		return getJdbcDao().getList(querySql.toString());
+	}
+	
 	public List<Map<String, Object>> getListMap(String sql){
 		return getJdbcDao().getList(sql);
 	}
@@ -577,16 +602,43 @@ public class CacheVo {
 		return 0;
 	}
 	
+	public long getCount(String sql , SQLWhere where){
+		//Object tableName = getClassInfo(this.getClass(), FIXED_DEFINITION_TABLE);
+		StringBuilder querySql = new StringBuilder("select count(*) num from (").append(sql).append(" ) as t").append(where.toString());
+		logger.error(querySql.toString());
+		List<Map<String, Object>>  list = getJdbcDao().getList(querySql.toString());
+		if(list != null && list.size() > 0){
+			return Long.parseLong(list.get(0).get("num").toString());
+		}
+		return 0;
+	}
+	
 	private void setValueToVo(Field field,JsonObject jo,String name){
 		String typeName = field.getType().getName();
 		JsonElement je = jo.get(name);
 		if(field.getType().equals(Integer.class) || typeName.equalsIgnoreCase("int")){
-			if(!PublicMethod.isEmptyStr(je.getAsString()) && Format.isNumeric(je.getAsString())){
-				setFieldValue(field,je.getAsInt());
+			if(!PublicMethod.isEmptyStr(je.getAsString()) ){
+				String value = je.getAsString();
+				if(value.startsWith("-")){
+					if(Format.isNumeric(value.substring(1))){
+						setFieldValue(field,je.getAsInt());
+					}
+				}else{
+					if(Format.isNumeric(value)){
+						setFieldValue(field,je.getAsInt());
+					}
+				}
 			}
 		}else if(field.getType().equals(Long.class) || typeName.equalsIgnoreCase("long")){
-			if(!PublicMethod.isEmptyStr(je.getAsString()) &&  Format.isNumeric(je.getAsString())){
-				setFieldValue(field,jo.get(name).getAsLong());
+			String value = je.getAsString();
+			if(value.startsWith("-")){
+				if(Format.isNumeric(value.substring(1))){
+					setFieldValue(field,jo.get(name).getAsLong());
+				}
+			}else{
+				if(Format.isNumeric(value)){
+					setFieldValue(field,jo.get(name).getAsLong());
+				}
 			}
 		}else if(field.getType().equals(Boolean.class) || typeName.equalsIgnoreCase("boolean")){
 			if(!PublicMethod.isEmptyStr(je.getAsString())){
@@ -865,28 +917,6 @@ public class CacheVo {
 	}
 	
 	
-	
-	
-	
-	/**
-	 * 删除自定义缓存值 自定义key，id
-	 * /
-	private void deleteCustomCacheValue(){
-		if(isChache()){
-			Map<Integer,CustomCacheBean> customCacheMap = getCustomCacheMap();
-			if(customCacheMap != null ){
-				for(Map.Entry<Integer, CustomCacheBean> mapBean : customCacheMap.entrySet()){
-					String key = mapBean.getValue().toString(this);
-					try {
-						new RedisAPI(redisObj).hDel(key, mapBean.getValue().getHashSetKey(this));
-					} catch (Exception e) {
-						logger.error("删除自定义缓存", e);
-					}
-				}
-			}
-		}
-	}*/
-	
 	/**
 	 * 删除所有自定义缓存值
 	 */
@@ -1105,7 +1135,6 @@ public class CacheVo {
 		for(Field field : list){
 			try {
 				Object value = getFieldValue(field);
-				logger.error("---------------------"+field.getName()+"="+value);
 				if(value  == null){
 					value = "";
 					continue;
@@ -1174,7 +1203,6 @@ public class CacheVo {
 			Field field = listField.get(i);
 			String column = columnORM.get(field.getName());
 			if(!field.getName().equals(getPKField().getName())){
-				
 				if(bool){
 					columnSql.append(" , ").append(column);
 					if(column.equals(CREATE_TIME) || column.equals(OPERATOR_TIME)){
@@ -1207,7 +1235,7 @@ public class CacheVo {
 		logger.error("--------------insertSql="+sql.toString());
 		long id = getJdbcDao().insert(sql.toString(), listParam.toArray());
 		setPKValue(String.valueOf(id));
-		if(!autoCommit){
+		if(getJdbcDao().isAutoCommit()){
 			insertNosql(1);//保存缓存数据
 		}
 		vo.deleteCustomCacheAll();//删除自定义缓存
@@ -1353,13 +1381,25 @@ public class CacheVo {
 		boolean bool = false;
 		if(fieldName != null && fieldName.length > 0){
 			List<String> fieldList = Arrays.asList(fieldName);
-			columnSql.append("operator_time").append(" = ? ");
-			listParam.add(new Date());
+			Date date = new Date();
+			listParam.add(date);
+			//if(autoCommit){
+				columnSql.append("operator_time").append(" = ? ");
+			//}else{
+			//	columnSql.append("operator_time").append(" =  ").append(PublicMethod.formatDateStr(date, "'yyyy-MM-dd HH:mm:ss'"));
+			//}
+			
+			
 			for(int i = 0;i<len;i++){
 				Field field = listField.get(i);
 				String column = columnORM.get(field.getName());
 				if(fieldList.contains(column) || fieldList.contains(field.getName())){
-					columnSql.append(",").append(column).append(" = ? ");
+					//if(autoCommit){
+						columnSql.append(",").append(column).append(" = ? ");
+					//}else{
+					//	columnSql.append(",").append(column).append(" =  ").append(getColumnValue(field));
+					//}
+					
 					listParam.add(getFieldValue(field));
 				}
 			}
@@ -1371,21 +1411,42 @@ public class CacheVo {
 				if(column.equals("create_time")){
 					continue;
 				}else if(column.equals("operator_time")){
-					if(bool){
-						columnSql.append(",").append(column).append(" = ? ");
-					}else{
-						bool = true;
-						columnSql.append(column).append(" = ? ");
-					}
 					Date date = new Date();
 					setFieldValue(field, date);
 					listParam.add(date);
-				}else{
 					if(bool){
-						columnSql.append(",").append(column).append(" = ? ");
+						//if(autoCommit){
+							columnSql.append(",").append(column).append(" = ? ");
+						//}else{
+						//	columnSql.append(",").append(column).append(" =  ").append(PublicMethod.formatDateStr(date, "'yyyy-MM-dd HH:mm:ss'"));
+						//}
+						
 					}else{
 						bool = true;
-						columnSql.append(column).append(" = ? ");
+						//if(autoCommit){
+							columnSql.append(column).append(" = ? ");
+						//}else{
+						//	columnSql.append(column).append(" =  ").append(PublicMethod.formatDateStr(date, "'yyyy-MM-dd HH:mm:ss'"));
+						//}
+						
+					}
+					
+				}else{
+					if(bool){
+						//if(autoCommit){
+							columnSql.append(",").append(column).append(" = ? ");
+						//}else{
+						//	columnSql.append(",").append(column).append(" =  ").append(getColumnValue(field));
+						//}
+						
+					}else{
+						bool = true;
+						//if(autoCommit){
+							columnSql.append(column).append(" = ? ");
+						//}else{
+						//	columnSql.append(column).append(" =  ").append(getColumnValue(field));
+						//}
+						
 					}
 					listParam.add(getFieldValue(field));
 					//param[i] = getFieldValue(field);
@@ -1393,11 +1454,16 @@ public class CacheVo {
 			}
 			sql.append(columnSql);
 		}
-		sql.append( " WHERE ").append(columnORM.get(getPKField().getName())).append(" = ?");
+		//if(autoCommit){
+			sql.append( " WHERE ").append(columnORM.get(getPKField().getName())).append(" = ?");
+		//}else{
+		//	sql.append( " WHERE ").append(columnORM.get(getPKField().getName())).append(" = ").append(getFieldValue(getPKField()));
+		//}
+		
 		//param[len] = getFieldValue(getPKField());
 		listParam.add(getFieldValue(getPKField()));
 		int index = getJdbcDao().update(sql.toString(), listParam.toArray());
-		if(autoCommit){
+		if(getJdbcDao().isAutoCommit()){
 			insertNosql(1);//保存缓存数据
 		}else{
 			deleteNoSql();

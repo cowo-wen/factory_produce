@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -33,6 +34,7 @@ import com.google.gson.JsonParser;
  */
 @RestController
 @RequestMapping("/v1/permission/sys/role")
+@Scope("prototype")//设置成多例
 public class RoleAPI extends Result{
     public static Log logger = LogFactory.getLog(RoleAPI.class);
     
@@ -58,7 +60,7 @@ public class RoleAPI extends Result{
             }
     	}
     	
-    	SysRoleEntity Role = new SysRoleEntity();
+    	SysRoleEntity Role = new SysRoleEntity(jdbcDao);
     	
     	
     	
@@ -83,7 +85,7 @@ public class RoleAPI extends Result{
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
     public String vo(@PathVariable("id") Long id) throws Exception{
-    	SysRoleEntity entity = new SysRoleEntity();
+    	SysRoleEntity entity = new SysRoleEntity(jdbcDao);
     	entity.setRoleId(id);
     	entity.loadVo();
         return success(entity);
@@ -91,7 +93,7 @@ public class RoleAPI extends Result{
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
     public String delete(@PathVariable("id") Long id) {
-    	SysRoleEntity entity = new SysRoleEntity();
+    	SysRoleEntity entity = new SysRoleEntity(jdbcDao);
     	entity.setRoleId(id);
     	entity.loadVo();
     	try {
@@ -103,7 +105,7 @@ public class RoleAPI extends Result{
     		List<SysRoleEntity> list = entity.getListVO(0, 1000, new SQLWhere(new LikeCnd("link_code", entity.getRoleCode())).or(new EQCnd("role_code", entity.getRoleCode())));
     		if(list != null && list.size() > 0){
     			for(SysRoleEntity role : list ){
-    				List<SysUserRoleEntity> listUR = new SysUserRoleEntity().getListVO(0, 1000, new SQLWhere(new EQCnd("role_id", entity.getRoleId())));
+    				List<SysUserRoleEntity> listUR = new SysUserRoleEntity(jdbcDao).getListVO(0, 1000, new SQLWhere(new EQCnd("role_id", entity.getRoleId())));
     				if(listUR != null && listUR.size() > 0){
     					for(SysUserRoleEntity ur : listUR){
     						ur.delete();//删除人员与角色的关联表
@@ -112,7 +114,6 @@ public class RoleAPI extends Result{
     				role.delete();//删除角色
         		}
     		}
-    		
 			return success("删除成功");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -131,7 +132,7 @@ public class RoleAPI extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
     public String update(@RequestParam String aoData) throws Exception{
-    	SysRoleEntity entity = new SysRoleEntity();
+    	SysRoleEntity entity = new SysRoleEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	
     	if(PublicMethod.isEmptyStr(entity.getRoleName())){
@@ -143,7 +144,7 @@ public class RoleAPI extends Result{
     	}
     	
     	try{
-    		SysRoleEntity entity2 = new SysRoleEntity();
+    		SysRoleEntity entity2 = new SysRoleEntity(jdbcDao);
         	entity2.setRoleId(entity.getRoleId());
         	entity2.loadVo();
         	if(entity2.getRoleCode() == null){
@@ -174,7 +175,7 @@ public class RoleAPI extends Result{
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
     public String add(@RequestParam String aoData) throws Exception{
-    	SysRoleEntity entity = new SysRoleEntity();
+    	SysRoleEntity entity = new SysRoleEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	if(PublicMethod.isEmptyStr(entity.getRoleName())){
     		return error("角色名称不能为空");
@@ -188,7 +189,7 @@ public class RoleAPI extends Result{
     	
     	
     	if(entity.getParentId() != null && entity.getParentId() > 0){
-    		SysRoleEntity entity2 = new SysRoleEntity();
+    		SysRoleEntity entity2 = new SysRoleEntity(jdbcDao);
         	entity2.setRoleId(entity.getParentId());
         	entity2.loadVo();
         	if(entity2.getRoleCode() == null){
