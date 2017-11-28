@@ -42,7 +42,7 @@ public class ApplicationAPI extends Result {
    
     
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
-    public String list(@RequestParam String aoData) throws Exception{
+    public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
     	
     	int iDisplayStart = 0;// 起始  
@@ -83,10 +83,10 @@ public class ApplicationAPI extends Result {
      * 获取单个对象
      * @param id
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
-    public String vo(@PathVariable("id") Long id) throws Exception{
+    public String vo(@PathVariable("id") Long id) {
     	SysApplicationEntity entity = new SysApplicationEntity(jdbcDao);
     	entity.setApplicationId(id);
     	entity.loadVo();
@@ -120,7 +120,7 @@ public class ApplicationAPI extends Result {
     
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
-    public String update(@RequestParam String aoData) throws Exception{
+    public String update(@RequestParam String aoData) {
     	SysApplicationEntity entity = new SysApplicationEntity(jdbcDao);
     	logger.error("-------"+aoData);
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
@@ -176,7 +176,7 @@ public class ApplicationAPI extends Result {
     }
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
-    public String add(@RequestParam String aoData) throws Exception{
+    public String add(@RequestParam String aoData) {
     	SysApplicationEntity entity = new SysApplicationEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	

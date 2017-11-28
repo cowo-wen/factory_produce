@@ -16,6 +16,7 @@ import javax.persistence.Table;
 
 import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
+import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
 
 /**
@@ -42,9 +43,15 @@ public class SysConfigEntity extends CacheVo  implements Serializable
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private Long id;
+	
+	public static final String GROUP_CODE = "group_code";
+    @Column
+    @CustomCache(sort = 0)
+    private String groupCode;
 
 	public static final String GROUP_TYPE = "group_type";
     @Column
+    @CustomCache(sort = 0,hashKey=true)
     private String groupType;
     
     public static final String NAME = "name";
@@ -59,6 +66,17 @@ public class SysConfigEntity extends CacheVo  implements Serializable
     @Column
     private String valueClass;
     
+    public static final String VALUE = "value";
+    @Column
+    private String value;
+    
+    public static final String VALID = "valid";
+    @Column
+    private Integer valid;
+    
+    public static final String REMARK = "remark";
+    @Column
+    private Integer remark;
     
     @Column
     private Date createTime;
@@ -77,8 +95,9 @@ public class SysConfigEntity extends CacheVo  implements Serializable
 		return id;
 	}
 
-	public void setId(Long id) {
+	public SysConfigEntity setId(Long id) {
 		this.id = id;
+		return this;
 	}
 
 	
@@ -87,16 +106,18 @@ public class SysConfigEntity extends CacheVo  implements Serializable
 		return groupType;
 	}
 
-	public void setGroupType(String groupType) {
+	public SysConfigEntity setGroupType(String groupType) {
 		this.groupType = groupType;
+		return this;
 	}
 
 	public String getName() {
 		return name;
 	}
 
-	public void setName(String name) {
+	public SysConfigEntity setName(String name) {
 		this.name = name;
+		return this;
 	}
 
 	
@@ -105,34 +126,75 @@ public class SysConfigEntity extends CacheVo  implements Serializable
 		return filedName;
 	}
 
-	public void setFiledName(String filedName) {
+	public SysConfigEntity setFiledName(String filedName) {
 		this.filedName = filedName;
+		return this;
 	}
 
 	public String getValueClass() {
 		return valueClass;
 	}
 
-	public void setValueClass(String valueClass) {
+	public SysConfigEntity setValueClass(String valueClass) {
 		this.valueClass = valueClass;
+		return this;
 	}
 
 	public Date getCreateTime() {
 		return createTime;
 	}
 
-	public void setCreateTime(Date createTime) {
+	public SysConfigEntity setCreateTime(Date createTime) {
 		this.createTime = createTime;
+		return this;
 	}
 
 	public Date getOperatorTime() {
 		return operatorTime;
 	}
 
-	public void setOperatorTime(Date operatorTime) {
+	public SysConfigEntity setOperatorTime(Date operatorTime) {
 		this.operatorTime = operatorTime;
+		return this;
 	}
 
+	public String getGroupCode() {
+		return groupCode;
+	}
+
+	public SysConfigEntity setGroupCode(String groupCode) {
+		this.groupCode = groupCode;
+		return this;
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	public SysConfigEntity setValue(String value) {
+		this.value = value;
+		return this;
+	}
+
+	public Integer getValid() {
+		return valid;
+	}
+
+	public SysConfigEntity setValid(Integer valid) {
+		this.valid = valid;
+		return this;
+	}
+
+	public Integer getRemark() {
+		return remark;
+	}
+
+	public SysConfigEntity setRemark(Integer remark) {
+		this.remark = remark;
+		return this;
+	}
+
+	
     
     
 }

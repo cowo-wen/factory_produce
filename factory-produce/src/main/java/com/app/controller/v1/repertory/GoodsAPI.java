@@ -44,7 +44,7 @@ public class GoodsAPI extends Result{
      * 查询产品信息列表
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
-    public String list(@RequestParam String aoData) throws Exception{
+    public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
     	SQLWhere sql = new SQLWhere().orderBy(new DescSort(RepertoryGoodsEntity.GOODS_ID));
     	for(JsonElement je : jo){
@@ -84,10 +84,10 @@ public class GoodsAPI extends Result{
      * 获取非成品的产品数据
      * @param aoData
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/no_finished_list")
-    public String noFinishedList(@RequestParam String aoData) throws Exception{
+    public String noFinishedList(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
     	SQLWhere sql = new SQLWhere(new INCnd(RepertoryGoodsEntity.TYPE, new Integer[]{RepertoryGoodsEntity.GOOD_TYPE_MATERIAL,RepertoryGoodsEntity.GOOD_TYPE_SEMI_PRODUCT})).orderBy(new DescSort(RepertoryGoodsEntity.TYPE,RepertoryGoodsEntity.GOODS_ID));
     	for(JsonElement je : jo){
@@ -128,10 +128,10 @@ public class GoodsAPI extends Result{
      * 获取单个对象
      * @param id
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
-    public String vo(@PathVariable("id") Long id) throws Exception{
+    public String vo(@PathVariable("id") Long id) {
     	RepertoryGoodsEntity entity = new RepertoryGoodsEntity(jdbcDao);
     	entity.setGoodsId(id).loadVo();
         return success(entity);
@@ -177,10 +177,10 @@ public class GoodsAPI extends Result{
      * 产品数据是否清除产品零件表的数据
      * @param aoData
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
-    public String update(@RequestParam String aoData) throws Exception{
+    public String update(@RequestParam String aoData) {
     	RepertoryGoodsEntity entity = new RepertoryGoodsEntity(jdbcDao);
     	logger.error("-------"+aoData);
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
@@ -215,10 +215,10 @@ public class GoodsAPI extends Result{
      * 新增产品信息
      * @param aoData
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
-    public String add(@RequestParam String aoData) throws Exception{
+    public String add(@RequestParam String aoData) {
     	RepertoryGoodsEntity entity = new RepertoryGoodsEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	logger.error("aoData="+aoData);

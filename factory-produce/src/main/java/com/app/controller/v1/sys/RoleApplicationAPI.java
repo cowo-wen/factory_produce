@@ -19,7 +19,6 @@ import com.app.bean.SysUserDetails;
 import com.app.controller.common.Result;
 import com.app.dao.sql.SQLWhere;
 import com.app.dao.sql.cnd.EQCnd;
-import com.app.dao.sql.cnd.INCnd;
 import com.app.entity.sys.SysApplicationEntity;
 import com.app.entity.sys.SysRoleApplicationEntity;
 import com.app.entity.sys.SysRoleEntity;
@@ -131,7 +130,8 @@ public class RoleApplicationAPI extends Result{
 	    	
 	    	
 	    	
-	    	List<SysRoleApplicationEntity> listRA = ra.getListVO(new SQLWhere(new EQCnd("role_id", roleId)));
+	    	//List<SysRoleApplicationEntity> listRA = ra.getListVO(new SQLWhere(new EQCnd("role_id", roleId)));
+	    	List<SysRoleApplicationEntity> listRA = ra.setRoleId(roleId).queryCustomCacheValue(0, null);//.getListVO(new SQLWhere(new EQCnd("role_id", roleId)));
 	    	List<Long> appidList = new ArrayList<Long>();
 	    	for(SysRoleApplicationEntity roleApp : listRA){
 	    		if(listAppIds.indexOf(roleApp.getApplicationId()) == -1){
@@ -177,10 +177,12 @@ public class RoleApplicationAPI extends Result{
     private void deleteRoleApp(List<Long> appid,Long roleId){
     	List<SysRoleEntity> list =new SysRoleEntity(jdbcDao).getListVO(new SQLWhere(new EQCnd("parent_id", roleId)));
     	for(SysRoleEntity role: list){
-    		List<SysRoleApplicationEntity> sraList = new SysRoleApplicationEntity(jdbcDao).getListVO(new SQLWhere(new EQCnd("role_id", role.getRoleId())).and(new INCnd("application_id", appid)));
+    		List<SysRoleApplicationEntity> sraList = new SysRoleApplicationEntity(jdbcDao).setRoleId(role.getRoleId()).queryCustomCacheValue(0, null);
     		for(SysRoleApplicationEntity sra : sraList){
     			try {
-					sra.delete();
+    				if(appid.contains(sra.getApplicationId())){
+    					sra.delete();
+    				}
 				} catch (Exception e) {
 					logger.error("删除关联的角色与应用数据出错", e);
 				}

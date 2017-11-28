@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.app.bean.SysUserDetails;
 import com.app.dao.JdbcDao;
+import com.app.entity.sys.SysLogEntity;
 import com.app.entity.sys.SysUserEntity;
 import com.app.util.PublicMethod;
 import com.google.gson.FieldNamingPolicy;
@@ -36,7 +37,7 @@ public class Result {
 	
 	protected JdbcDao jdbcDao;
 	
-	private static final Gson gson = new GsonBuilder().serializeNulls().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+	private static final Gson gson = new GsonBuilder().serializeNulls().registerTypeAdapter(java.util.Date.class, new GsonDateConverter()).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 	
 	
 	
@@ -67,7 +68,6 @@ public class Result {
 	}
 
 	public  JdbcDao getJdbcDao(){
-		
 		return getJdbcDao("jdbcDao");
 	}
 	
@@ -135,4 +135,14 @@ public class Result {
     	//return new GsonBuilder().serializeNulls().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
 	}
 
+	
+	public void insertLog(String applicationCode,long id,String ip,String message) throws Exception{
+		SysLogEntity log = new SysLogEntity(jdbcDao);
+		log.setApplicationCode(applicationCode);
+		log.setDataId(id);
+		log.setUserId(getLoginUser().getUserId());
+		log.setType(SysLogEntity.TYPE_SUCCESS);
+		log.setMessage(message);
+		log.insert();
+	}
 }

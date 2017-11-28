@@ -42,7 +42,7 @@ public class UserAPI extends Result{
   
     
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
-    public String list(@RequestParam String aoData) throws Exception{
+    public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
     	SQLWhere sql = new SQLWhere().orderBy(new DescSort(SysUserEntity.USER_ID));
     	int iDisplayStart = 0;// 起始  
@@ -66,7 +66,7 @@ public class UserAPI extends Result{
     	}
     	
     	SysUserEntity entity = new SysUserEntity(jdbcDao);
-    	entity.outPut("role");
+    	entity.outPutOther("role");
     	List<SysUserEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
     	
     	
@@ -84,10 +84,10 @@ public class UserAPI extends Result{
      * 获取单个对象
      * @param id
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
-    public String vo(@PathVariable("id") Long id) throws Exception{
+    public String vo(@PathVariable("id") Long id) {
     	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.setUserId(id);
     	entity.loadVo();
@@ -129,7 +129,7 @@ public class UserAPI extends Result{
     
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
-    public String update(@RequestParam String aoData) throws Exception{
+    public String update(@RequestParam String aoData) {
     	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	if(PublicMethod.isEmptyStr(entity.getUserName())){
@@ -168,10 +168,10 @@ public class UserAPI extends Result{
      * 管理员修改用户密码
      * @param aoData
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/managePW")
-    public String managePW(@RequestParam String aoData) throws Exception{
+    public String managePW(@RequestParam String aoData) {
     	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	
@@ -193,10 +193,10 @@ public class UserAPI extends Result{
      * 用户修改个人密码
      * @param aoData
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/updatePW")
-    public String updatePW(@RequestParam String aoData) throws Exception{
+    public String updatePW(@RequestParam String aoData) {
     	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	if(PublicMethod.isEmptyStr(entity.getPassword()) || entity.getPassword().length() != 32){
@@ -213,7 +213,7 @@ public class UserAPI extends Result{
     }
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
-    public String add(@RequestParam String aoData) throws Exception{
+    public String add(@RequestParam String aoData) {
     	SysUserEntity entity = new SysUserEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	if(PublicMethod.isEmptyStr(entity.getUserName())){

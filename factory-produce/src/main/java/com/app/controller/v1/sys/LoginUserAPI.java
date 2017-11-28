@@ -3,6 +3,7 @@ package com.app.controller.v1.sys;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -54,10 +55,10 @@ public class LoginUserAPI extends Result{
     /**
      * 获取登录的用户信息
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method=RequestMethod.GET,value="/logininfo")
-    public String loginInfo(@RequestParam String terminalType) throws Exception{
+    public String loginInfo(@RequestParam String terminalType) {
     	RedisAPI redisAPI = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
     	Set<String> set = redisAPI.keys("temp:"+session.getId()+":application_code:*");
     	if(set != null && set.size() > 0){
@@ -128,6 +129,7 @@ public class LoginUserAPI extends Result{
 	    	}
 	    	
 	    	list = new ArrayList<SysApplicationEntity>(); //获取角色应用
+	    	Set<String> appSet = new HashSet<String>();
 	    	if(currentRole != null && currentRole.size() > 0){
 	    		List<SysRoleApplicationEntity> listRA = new SysRoleApplicationEntity(jdbcDao).setRoleId(Long.parseLong(currentRole.get("role"))).queryCustomCacheValue(0,null);
 	    		if(listRA != null){
@@ -135,8 +137,12 @@ public class LoginUserAPI extends Result{
 	    				SysApplicationEntity a = new SysApplicationEntity(jdbcDao);
 	    				a.setApplicationId(ra.getApplicationId()).loadVo();
 	    				if(a.getTerminalType() == type && a.getValid() == StaticBean.YES){
-	    					logger.error(user.getUserId()+"-------------"+a.getName()+"|"+a.getApplicationCode());
-	    					list.add(a);
+	    					if(!appSet.contains(a.getApplicationCode())){
+	    						appSet.add(a.getApplicationCode());
+	    						list.add(a);
+	    					}else{
+	    						logger.error("重复数据"+ra.getRoleId()+"_"+ra.getId()+"_"+ra.getApplicationId()+"-"+currentRole.get("role"));
+	    					}
 	    				}
 	    			}
 	    		}
@@ -175,10 +181,10 @@ public class LoginUserAPI extends Result{
     /**
      * 切换用户登录角色
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method=RequestMethod.PUT,value="/role/{id}")
-    public String role(@PathVariable("id") Long id) throws Exception{
+    public String role(@PathVariable("id") Long id) {
     	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
     	String key = session.getId()+":role:current:select";
     	RedisAPI redisAPI = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);

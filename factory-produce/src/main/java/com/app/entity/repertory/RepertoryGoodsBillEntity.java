@@ -131,6 +131,10 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
     @CustomCache(sort=1)
     private Integer type;
     
+    public static final String PRODUCE_ID = "produce_id";
+    @Column
+    private Long produceId;
+    
     /**
      * 单据名称
      */
@@ -453,6 +457,14 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
 			
 		}
 		return id;
+	}
+
+	public Long getProduceId() {
+		return produceId;
+	}
+
+	public void setProduceId(Long produceId) {
+		this.produceId = produceId;
 	}
 
     

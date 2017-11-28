@@ -50,9 +50,9 @@ public class SysLogEntity extends CacheVo implements Serializable
 	/**
 	 * 应用id
 	 */
-	public static final String APPLICATION_ID = "application_id";
-	@Column(name=APPLICATION_ID)
-    private long applicationId;
+	public static final String APPLICATION_CODE = "application_code";
+	@Column(name=APPLICATION_CODE)
+    private String applicationCode;
 
 	/**
 	 * 数据id
@@ -122,12 +122,14 @@ public class SysLogEntity extends CacheVo implements Serializable
 		this.logId = logId;
 	}
 
-	public Long getApplicationId() {
-		return applicationId;
+	
+
+	public String getApplicationCode() {
+		return applicationCode;
 	}
 
-	public void setApplicationId(Long applicationId) {
-		this.applicationId = applicationId;
+	public void setApplicationCode(String applicationCode) {
+		this.applicationCode = applicationCode;
 	}
 
 	public Long getDataId() {

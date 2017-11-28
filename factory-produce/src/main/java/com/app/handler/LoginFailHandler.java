@@ -57,7 +57,8 @@ public class LoginFailHandler implements  AuthenticationFailureHandler {
 	        SysLogEntity sysLogEntity = new SysLogEntity(null);
 	        
 	        sysLogEntity.setUserId(0L);
-	        sysLogEntity.setApplicationId(1L);
+	        //sysLogEntity.setApplicationId(1L);
+	        sysLogEntity.setApplicationCode("100");
 	        sysLogEntity.setIp(getIpAddress(request));
 	        sysLogEntity.setType(SysLogEntity.TYPE_FAIL);
 	        //System.out.println(exception.getLocalizedMessage());

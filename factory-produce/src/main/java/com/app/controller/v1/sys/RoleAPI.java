@@ -41,7 +41,7 @@ public class RoleAPI extends Result{
   
     
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
-    public String list(@RequestParam String aoData) throws Exception{
+    public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
     	SQLWhere sql = new SQLWhere().orderBy(new DescSort("role_id"));
     	int iDisplayStart = 0;// 起始  
@@ -81,10 +81,10 @@ public class RoleAPI extends Result{
      * 获取单个对象
      * @param id
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
-    public String vo(@PathVariable("id") Long id) throws Exception{
+    public String vo(@PathVariable("id") Long id) {
     	SysRoleEntity entity = new SysRoleEntity(jdbcDao);
     	entity.setRoleId(id);
     	entity.loadVo();
@@ -131,7 +131,7 @@ public class RoleAPI extends Result{
     
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
-    public String update(@RequestParam String aoData) throws Exception{
+    public String update(@RequestParam String aoData) {
     	SysRoleEntity entity = new SysRoleEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	
@@ -174,7 +174,7 @@ public class RoleAPI extends Result{
    
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
-    public String add(@RequestParam String aoData) throws Exception{
+    public String add(@RequestParam String aoData) {
     	SysRoleEntity entity = new SysRoleEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	if(PublicMethod.isEmptyStr(entity.getRoleName())){

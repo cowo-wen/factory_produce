@@ -46,10 +46,10 @@ public class BillAPI extends Result{
      * 查询列表
      * @param aoData
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
-    public String list(@RequestParam String aoData) throws Exception{
+    public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
     	SQLWhere sql = new SQLWhere().orderBy(new DescSort(RepertoryGoodsBillEntity.GOODS_BILL_ID));
     	for(JsonElement je : jo){
@@ -71,7 +71,7 @@ public class BillAPI extends Result{
     	logger.error(aoData);
     	RepertoryGoodsBillEntity entity = new RepertoryGoodsBillEntity(jdbcDao);
     	
-    	entity.outPut(RepertoryGoodsBillEntity.CHECK_USER_NAME,RepertoryGoodsBillEntity.LIABLE_USER_NAME);
+    	entity.outPutOther(RepertoryGoodsBillEntity.CHECK_USER_NAME,RepertoryGoodsBillEntity.LIABLE_USER_NAME);
     	List<RepertoryGoodsBillEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
     	
     	long count = entity.getCount(sql);
@@ -94,10 +94,10 @@ public class BillAPI extends Result{
      * 获取单个对象
      * @param id
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
-    public String vo(@PathVariable("id") Long id) throws Exception{
+    public String vo(@PathVariable("id") Long id) {
     	RepertoryGoodsBillEntity entity = new RepertoryGoodsBillEntity(jdbcDao);
     	entity.setGoodsBillId(id).loadVo();
         return success(entity);
@@ -111,6 +111,10 @@ public class BillAPI extends Result{
     		if(!isCheckUserSelf(entity.getLiableUser())){
     			return error("没有权限删除");
     		}
+    		
+    		if(!PublicMethod.isEmptyValue(entity.getProduceId())){
+    			return error("该数据不能删除");
+    		}
     		entity.delete();
     		return success("删除成功");
     	}catch(Exception e){
@@ -122,7 +126,7 @@ public class BillAPI extends Result{
     
    
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/check")
-    public String check(@RequestParam String aoData) throws Exception{
+    public String check(@RequestParam String aoData) {
     	RepertoryGoodsBillEntity entity = new RepertoryGoodsBillEntity(jdbcDao);
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
     	if(jo.has(RepertoryGoodsBillEntity.GOODS_BILL_ID)){
@@ -154,96 +158,97 @@ public class BillAPI extends Result{
     
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
-    public String update(@RequestParam String aoData) throws Exception{
+    public String update(@RequestParam String aoData) {
     	RepertoryGoodsBillEntity entity = new RepertoryGoodsBillEntity(jdbcDao);
-    	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
-    	if(jo.has(RepertoryGoodsBillEntity.GOODS_BILL_ID)){
-    		entity.setGoodsBillId(jo.get(RepertoryGoodsBillEntity.GOODS_BILL_ID).getAsLong()).loadVo();
-    		if(PublicMethod.isEmptyStr(entity.getGoodsBatchCode())){
-    			return error("不存在的数据");
-    		}else if(entity.getCheckStatus() == StaticBean.YES){
-    			return error("审核通过的数据不能修改");
-    		}
-    		if(!isCheckUserSelf(entity.getLiableUser())){
-    			return error("没有权限修改");
-    		}
-    		entity.parse(jo,1);
-    		entity.update(RepertoryGoodsBillEntity.GOODS_BATCH_CODE,RepertoryGoodsBillEntity.REMARK,RepertoryGoodsBillEntity.TITLE);
-    		RepertoryGoodsBillDetailEntity billDetail = new RepertoryGoodsBillDetailEntity(jdbcDao);
-    		List<RepertoryGoodsBillDetailEntity> delList = billDetail.setGoodsBillId(entity.getGoodsBillId()).queryCustomCacheValue(0);
-    		for(RepertoryGoodsBillDetailEntity d : delList){
-    			d.setType(entity.getType());
-    			d.delete();
-    		}
-    		
-    		if(jo.has("goods_batch_list") && jo.get("goods_batch_list").isJsonArray()){
-    			JsonArray ja = jo.get("goods_batch_list").getAsJsonArray();
-    			for(JsonElement je : ja){
-    				RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(jdbcDao);
-    				JsonObject jsonObject = je.getAsJsonObject();
-    				String code = null;
-    				if(!jsonObject.has("code") || jsonObject.get("code").isJsonNull()){
-    					return error("非法参数为空");
-    				}else{
-    					jsonObject.get("code").getAsString();
-    				}
-    				
-    				if(jsonObject.has("value") && !jsonObject.get("value").isJsonNull() ){
-    					String value = jsonObject.get("value").getAsString();
-    					if(!Format.isNumeric(value) || value.equals("0")){
-    						return error("非法参数:数量为不等于0的数字");
-    					}
-    					
-    					detail.setNumber(Integer.parseInt(value));
-    				}else{
-    					return error("非法参数为空:缺少数量字段");
-    				}
-    				
-    				
-    				if(!jsonObject.has("goods_id") || jsonObject.get("goods_id").isJsonNull() || PublicMethod.isEmptyStr(jsonObject.get("goods_id").getAsString())){
-    					return error(code+"数据列非法参数:goods_id不能为空");
-    				}else{
-    					if(!Format.isNumeric(jsonObject.get("goods_id").getAsString())){
-    						return error(code+"数据列非法参数:goods_id必需为大于0的整数");
-    					}
-    					
-    					if(jsonObject.get("goods_id").getAsLong() <= 0){
-    						return error(code+"数据列非法参数:goods_id必需为大于0的整数");
-    					}
-    					
-    					RepertoryGoodsEntity goods = new RepertoryGoodsEntity(jdbcDao);
-    					goods.setGoodsId(jsonObject.get("goods_id").getAsLong()).loadVo();
-    					if(PublicMethod.isEmptyStr(goods.getCode())){
-    						return error(code+"数据列非法参数:无效的产品信息");
-    					}else{
-    						detail.setGoodsId(goods.getGoodsId());
-    					}
-    				}
-    				if(jsonObject.has("batch_id") && !jsonObject.get("batch_id").isJsonNull()){
-    					if(!Format.isNumeric(jsonObject.get("batch_id").getAsString())){
-    						return error(code+"数据列非法参数:batch_id必需为数字");
-    					}
-    					if(!PublicMethod.isEmptyValue(jsonObject.get("batch_id").getAsLong())){
-    						RepertoryGoodsBatchEntity batch= new RepertoryGoodsBatchEntity(jdbcDao);
-    						batch.setGoodsBatchId(jsonObject.get("batch_id").getAsLong()).loadVo();
-    						if(PublicMethod.isEmptyValue(batch.getGoodsId())){
-    							return error(code+"数据列非法参数:无效的批次信息");
-    						}else{
-    							detail.setGoodsBatchId(batch.getGoodsBatchId());
-    						}
-    					}
-    				}
-    				detail.setType(entity.getType());
-    				detail.setGoodsBillId(entity.getGoodsBillId());
-    				detail.insert();
-    			}
-    		}
-    	}else{
-    		return error("主键不能为空");
-    	}
-    	
-    	
     	try{
+	    	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
+	    	if(jo.has(RepertoryGoodsBillEntity.GOODS_BILL_ID)){
+	    		entity.setGoodsBillId(jo.get(RepertoryGoodsBillEntity.GOODS_BILL_ID).getAsLong()).loadVo();
+	    		if(PublicMethod.isEmptyStr(entity.getGoodsBatchCode())){
+	    			return error("不存在的数据");
+	    		}else if(entity.getCheckStatus() == StaticBean.YES){
+	    			return error("审核通过的数据不能修改");
+	    		}
+	    		if(!isCheckUserSelf(entity.getLiableUser())){
+	    			return error("没有权限修改");
+	    		}
+	    		entity.parse(jo,1);
+	    		entity.update(RepertoryGoodsBillEntity.GOODS_BATCH_CODE,RepertoryGoodsBillEntity.REMARK,RepertoryGoodsBillEntity.TITLE);
+	    		RepertoryGoodsBillDetailEntity billDetail = new RepertoryGoodsBillDetailEntity(jdbcDao);
+	    		List<RepertoryGoodsBillDetailEntity> delList = billDetail.setGoodsBillId(entity.getGoodsBillId()).queryCustomCacheValue(0);
+	    		for(RepertoryGoodsBillDetailEntity d : delList){
+	    			d.setType(entity.getType());
+	    			d.delete();
+	    		}
+	    		
+	    		if(jo.has("goods_batch_list") && jo.get("goods_batch_list").isJsonArray()){
+	    			JsonArray ja = jo.get("goods_batch_list").getAsJsonArray();
+	    			for(JsonElement je : ja){
+	    				RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(jdbcDao);
+	    				JsonObject jsonObject = je.getAsJsonObject();
+	    				String code = null;
+	    				if(!jsonObject.has("code") || jsonObject.get("code").isJsonNull()){
+	    					return error("非法参数为空");
+	    				}else{
+	    					jsonObject.get("code").getAsString();
+	    				}
+	    				
+	    				if(jsonObject.has("value") && !jsonObject.get("value").isJsonNull() ){
+	    					String value = jsonObject.get("value").getAsString();
+	    					if(!Format.isNumeric(value) || value.equals("0")){
+	    						return error("非法参数:数量为不等于0的数字");
+	    					}
+	    					
+	    					detail.setNumber(Integer.parseInt(value));
+	    				}else{
+	    					return error("非法参数为空:缺少数量字段");
+	    				}
+	    				
+	    				
+	    				if(!jsonObject.has("goods_id") || jsonObject.get("goods_id").isJsonNull() || PublicMethod.isEmptyStr(jsonObject.get("goods_id").getAsString())){
+	    					return error(code+"数据列非法参数:goods_id不能为空");
+	    				}else{
+	    					if(!Format.isNumeric(jsonObject.get("goods_id").getAsString())){
+	    						return error(code+"数据列非法参数:goods_id必需为大于0的整数");
+	    					}
+	    					
+	    					if(jsonObject.get("goods_id").getAsLong() <= 0){
+	    						return error(code+"数据列非法参数:goods_id必需为大于0的整数");
+	    					}
+	    					
+	    					RepertoryGoodsEntity goods = new RepertoryGoodsEntity(jdbcDao);
+	    					goods.setGoodsId(jsonObject.get("goods_id").getAsLong()).loadVo();
+	    					if(PublicMethod.isEmptyStr(goods.getCode())){
+	    						return error(code+"数据列非法参数:无效的产品信息");
+	    					}else{
+	    						detail.setGoodsId(goods.getGoodsId());
+	    					}
+	    				}
+	    				if(jsonObject.has("batch_id") && !jsonObject.get("batch_id").isJsonNull()){
+	    					if(!Format.isNumeric(jsonObject.get("batch_id").getAsString())){
+	    						return error(code+"数据列非法参数:batch_id必需为数字");
+	    					}
+	    					if(!PublicMethod.isEmptyValue(jsonObject.get("batch_id").getAsLong())){
+	    						RepertoryGoodsBatchEntity batch= new RepertoryGoodsBatchEntity(jdbcDao);
+	    						batch.setGoodsBatchId(jsonObject.get("batch_id").getAsLong()).loadVo();
+	    						if(PublicMethod.isEmptyValue(batch.getGoodsId())){
+	    							return error(code+"数据列非法参数:无效的批次信息");
+	    						}else{
+	    							detail.setGoodsBatchId(batch.getGoodsBatchId());
+	    						}
+	    					}
+	    				}
+	    				detail.setType(entity.getType());
+	    				detail.setGoodsBillId(entity.getGoodsBillId());
+	    				detail.insert();
+	    			}
+	    		}
+	    	}else{
+	    		return error("主键不能为空");
+	    	}
+	    	
+    	
+    	
         	return success("修改成功",entity.getGoodsBillId());
     	}catch(Exception e){
     		logger.error("修改失败", e);
@@ -255,7 +260,7 @@ public class BillAPI extends Result{
     
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
-    public String add(@RequestParam String aoData) throws Exception{
+    public String add(@RequestParam String aoData) {
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
     	RepertoryGoodsBillEntity entity = new RepertoryGoodsBillEntity(jdbcDao);
     	entity.parse(jo);

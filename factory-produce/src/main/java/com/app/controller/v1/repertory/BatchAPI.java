@@ -43,7 +43,7 @@ public class BatchAPI extends Result{
      * 查询列表
      * @param aoData
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
     public String list(@RequestParam String aoData) {
@@ -75,7 +75,7 @@ public class BatchAPI extends Result{
     	logger.error(aoData);
     	RepertoryGoodsBatchEntity entity = new RepertoryGoodsBatchEntity(jdbcDao);
     	
-    	entity.outPut(RepertoryGoodsBatchEntity.NAME,RepertoryGoodsBatchEntity.TYPE,RepertoryGoodsBatchEntity.CODE);
+    	entity.outPutOther(RepertoryGoodsBatchEntity.NAME,RepertoryGoodsBatchEntity.TYPE,RepertoryGoodsBatchEntity.CODE);
     	List<RepertoryGoodsBatchEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
     	
     	
@@ -94,7 +94,7 @@ public class BatchAPI extends Result{
      * 查询列表
      * @param aoData
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list_and_goods")
     public String listAndGoods(@RequestParam String aoData) {
@@ -152,10 +152,10 @@ public class BatchAPI extends Result{
      * 获取单个对象
      * @param id
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
-    public String vo(@PathVariable("id") Long id) throws Exception{
+    public String vo(@PathVariable("id") Long id) {
     	RepertoryGoodsBatchEntity entity = new RepertoryGoodsBatchEntity(jdbcDao);
     	entity.setGoodsBatchId(id).loadVo();
         return success(entity);
@@ -180,7 +180,7 @@ public class BatchAPI extends Result{
     
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
-    public String update(@RequestParam String aoData) throws Exception{
+    public String update(@RequestParam String aoData) {
     	RepertoryGoodsBatchEntity entity = new RepertoryGoodsBatchEntity(jdbcDao);
     	logger.error("-------"+aoData);
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
@@ -202,7 +202,7 @@ public class BatchAPI extends Result{
     
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
-    public String add(@RequestParam String aoData) throws Exception{
+    public String add(@RequestParam String aoData) {
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
     	RepertoryGoodsBatchEntity entity = new RepertoryGoodsBatchEntity(jdbcDao);
     	entity.parse(jo);

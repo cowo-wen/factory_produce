@@ -228,6 +228,12 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 	public void setCode(String code) {
 		this.code = code;
 	}
+	
+	
+	public long applyInsert() throws Exception{
+		return super.insert();
+	}
+	
 
 	@Override
 	public long insert() throws Exception {

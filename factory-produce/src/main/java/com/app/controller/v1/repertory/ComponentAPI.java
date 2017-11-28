@@ -39,10 +39,10 @@ public class ComponentAPI extends Result{
      * 查询列表
      * @param aoData
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
-    public String list(@RequestParam String aoData) throws Exception{
+    public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
     	SQLWhere sql = new SQLWhere().orderBy(new DescSort(RepertoryGoodsComponentEntity.GOODS_COMPONENT_ID));
     	for(JsonElement je : jo){
@@ -61,7 +61,7 @@ public class ComponentAPI extends Result{
     	logger.error(aoData);
     	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity(jdbcDao);
     	
-    	entity.outPut(RepertoryGoodsComponentEntity.NAME,RepertoryGoodsComponentEntity.TYPE,RepertoryGoodsComponentEntity.CODE);
+    	entity.outPutOther(RepertoryGoodsComponentEntity.NAME,RepertoryGoodsComponentEntity.TYPE,RepertoryGoodsComponentEntity.CODE);
     	List<RepertoryGoodsComponentEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
     	
     	
@@ -81,10 +81,10 @@ public class ComponentAPI extends Result{
      * 获取单个对象
      * @param id
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
-    public String vo(@PathVariable("id") Long id) throws Exception{
+    public String vo(@PathVariable("id") Long id) {
     	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity(jdbcDao);
     	entity.setGoodsComponentId(id).loadVo();
         return success(entity);
@@ -109,7 +109,7 @@ public class ComponentAPI extends Result{
     
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
-    public String update(@RequestParam String aoData) throws Exception{
+    public String update(@RequestParam String aoData) {
     	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity(jdbcDao);
     	logger.error("-------"+aoData);
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
@@ -132,7 +132,7 @@ public class ComponentAPI extends Result{
     
     
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/add")
-    public String add(@RequestParam String aoData) throws Exception{
+    public String add(@RequestParam String aoData) {
     	RepertoryGoodsComponentEntity entity = new RepertoryGoodsComponentEntity(jdbcDao);
     	entity.parse(new JsonParser().parse(aoData).getAsJsonObject());
     	logger.error("aoData="+aoData);

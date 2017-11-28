@@ -29,8 +29,6 @@ import com.app.dao.sql.SQLWhere;
 import com.app.dao.sql.cnd.EQCnd;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -70,19 +68,21 @@ public class CacheVo implements ApplicationContextAware{
 	
 	private final static Map<Class<?>, Map<String, Object>> map = new HashMap<Class<?>, Map<String, Object>>();
 	
-	private transient Set<String> outPutSet = null;
+	private transient Set<String> outPutSetOther = null;//显示其他的字段
 	
-	private transient Set<String> outPutIgnoreSet = null;
+	private transient Set<String> outPutIgnoreSet = null;//忽略显示的字段
+	
+	private transient Set<String> outPutFieldSet = null;//显示的字段
 	
 	 
 	private static ApplicationContext applicationContext = null;//启动类set入，调用下面set方法
 	
 	//@Expose(deserialize=false,serialize=false)
-	private transient  String redisObj = null;
+	protected transient  String redisObj = null;
 	
 	//@Expose(deserialize=false,serialize=false)
 	
-	private transient  String[] outPutFields;
+	private transient  String[] outPutFieldsOther;
 	
 	protected transient JdbcDao jdbcDao;
 	
@@ -593,7 +593,7 @@ public class CacheVo implements ApplicationContextAware{
 	 * @return
 	 */
 	public long getCount(SQLWhere where){
-		Object tableName = getClassInfo(this.getClass(), FIXED_DEFINITION_TABLE);
+		Object tableName = getTableName();
 		StringBuilder sql = new StringBuilder("select count(*) num from ").append(tableName.toString()).append(where.toString());
 		List<Map<String, Object>>  list = getJdbcDao().getList(sql.toString());
 		if(list != null && list.size() > 0){
@@ -660,8 +660,8 @@ public class CacheVo implements ApplicationContextAware{
 		}else if(field.getType().equals(java.util.Date.class)){
 			java.util.Date date = null;
 			if(!PublicMethod.isEmptyStr(je.getAsString())){
-				if(jo.has(name+"FormatDate")){
-					date = PublicMethod.stringToDate(je.getAsString(), jo.get(name+"FormatDate").getAsString());
+				if(jo.has(name+"_format_date")){
+					date = PublicMethod.stringToDate(je.getAsString(), jo.get(name+"_format_date").getAsString());
 				}else{
 					date = PublicMethod.stringToDate(je.getAsString(),FIXED_DEFINITION_TIME_FORMAT);
 				}
@@ -671,8 +671,8 @@ public class CacheVo implements ApplicationContextAware{
 		}else if(field.getType().equals(java.sql.Date.class)){
 			if(!PublicMethod.isEmptyStr(je.getAsString())){
 				java.util.Date date = null;
-				if(jo.has(name+"FormatDate")){
-					date = PublicMethod.stringToDate(je.getAsString(), jo.get(name+"FormatDate").getAsString());
+				if(jo.has(name+"_format_date")){
+					date = PublicMethod.stringToDate(je.getAsString(), jo.get(name+"_format_date").getAsString());
 				}else{
 					date = PublicMethod.stringToDate(je.getAsString(),FIXED_DEFINITION_TIME_FORMAT);
 				}
@@ -690,6 +690,7 @@ public class CacheVo implements ApplicationContextAware{
 	private CacheVo setVo(JsonObject jo){
 		List<Field> list =  getColumnField();
 		Map<String,String>  map = getCustomORM();
+		Date date = PublicMethod.stringToDate("1970-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss");
 		for(Field field : list){
 			try{
 				String name = "";
@@ -697,8 +698,11 @@ public class CacheVo implements ApplicationContextAware{
 					setValueToVo( field, jo, name);
 				}else if(jo.has(name = map.get(field.getName()))){
 					setValueToVo( field, jo, name);
+				}else{
+					if(field.getType().equals(Date.class)){
+						setFieldValue(field,date);
+					}
 				}
-				
 				
 			}catch(Exception e){
 				logger.error("赋值失败", e);
@@ -749,7 +753,8 @@ public class CacheVo implements ApplicationContextAware{
 			String value = ZERO;
 			if(type != 0){
 				logger.error("插入缓存数据:"+toString());
-				value = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat(FIXED_DEFINITION_TIME_FORMAT).create().toJson(this);
+				//value = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat(FIXED_DEFINITION_TIME_FORMAT).create().toJson(this);
+				value = toString();
 			}
 			new RedisAPI(redisObj).put(getEntityCacheKeyName(), value,60*60*24*30);//保存一个月
 			//saveCustomCacheValue();//保存自定义缓存数据
@@ -832,15 +837,19 @@ public class CacheVo implements ApplicationContextAware{
 	}
 	
 	
-	public void outPut(String ...fieldName){
+	/**
+	 * 输出其他字段
+	 * @param fieldName
+	 */
+	public void outPutOther(String ...fieldName){
 		if(fieldName != null && fieldName.length > 0){
-			this.outPutFields = fieldName;
-			if(outPutSet == null){
-				outPutSet = new HashSet<String>();
+			this.outPutFieldsOther = fieldName;
+			if(outPutSetOther == null){
+				outPutSetOther = new HashSet<String>();
 			}
 			for(String name : fieldName){
 				if(!PublicMethod.isEmptyStr(name)){
-					outPutSet.add(name);
+					outPutSetOther.add(name);
 				}
 				
 			}
@@ -848,6 +857,10 @@ public class CacheVo implements ApplicationContextAware{
 		
 	}
 	
+	/**
+	 * 忽略输出字段，如果存在输出常规字段，即该方法无效
+	 * @param fieldName
+	 */
 	public void outPutIgnore(String ...fieldName){
 		if(fieldName != null && fieldName.length > 0){
 			if(outPutIgnoreSet == null){
@@ -856,6 +869,23 @@ public class CacheVo implements ApplicationContextAware{
 			for(String name : fieldName){
 				if(!PublicMethod.isEmptyStr(name)){
 					outPutIgnoreSet.add(name);
+				}
+				
+			}
+		}		
+	}
+	/**
+	 * 输出常规字段，该显示方式会导致忽略输出字段无效
+	 * @param fieldName
+	 */
+	public void outPutField(String ...fieldName){
+		if(fieldName != null && fieldName.length > 0){
+			if(outPutFieldSet == null){
+				outPutFieldSet = new HashSet<String>();
+			}
+			for(String name : fieldName){
+				if(!PublicMethod.isEmptyStr(name)){
+					outPutFieldSet.add(name);
 				}
 				
 			}
@@ -876,30 +906,55 @@ public class CacheVo implements ApplicationContextAware{
 			List<Field>  list = getColumnField();
 			Map<String,String> columnORM = getCustomORM();
 			Map<Field,String> out = getOutPutMap();
+			Date date = new Date();
 			for(Map<String,Object> mapVo : listMap){
 				if(mapVo != null && mapVo.size() > 0){
 					try {
 						T vo = newCacheVo();
-						vo.outPut(this.outPutFields);
+						vo.outPutOther(this.outPutFieldsOther);
 						for (Field field : list) {
-							if(outPutIgnoreSet != null){//忽略输出的字段
+							
+							if(field.getType().equals(java.util.Date.class)){
+								if(mapVo.containsKey(columnORM.get(field.getName()))){
+									Object obj = mapVo.get(columnORM.get(field.getName()));
+									if(obj == null){
+										vo.setFieldValue(field,date);
+									}else{
+										vo.setFieldValue(field,obj);
+									}
+									
+								}
+							}
+							
+							
+							
+							if(outPutFieldSet != null && outPutFieldSet.size() > 0){
+								if(!outPutFieldSet.contains(field.getName()) && !outPutFieldSet.contains(columnORM.get(field.getName()))){
+									continue;
+								}
+							}
+							
+							if(outPutIgnoreSet != null && outPutIgnoreSet.size() > 0){//忽略输出的字段
 								if(outPutIgnoreSet.contains(field.getName()) || outPutIgnoreSet.contains(columnORM.get(field.getName()))){
 									continue;
 								}
 							}
 							
-							if(mapVo.containsKey(columnORM.get(field.getName()))){
-								Object obj = mapVo.get(columnORM.get(field.getName()));
-								if(obj != null){
-									vo.setFieldValue(field,obj);
+							if(!field.getType().equals(java.util.Date.class)){
+								if(mapVo.containsKey(columnORM.get(field.getName()))){
+									Object obj = mapVo.get(columnORM.get(field.getName()));
+									if(obj != null){
+										vo.setFieldValue(field,obj);
+									}
+									
 								}
-								
 							}
+							
 						}
 						
-						if(outPutSet != null && outPutSet.size() > 0 && out != null && out.size() > 0){
+						if(outPutSetOther != null && outPutSetOther.size() > 0 && out != null && out.size() > 0){
 							for(Map.Entry<Field, String> kv : out.entrySet()){
-								if(outPutSet.contains(kv.getKey().getName()) || outPutSet.contains(getORMName(kv.getKey().getName()))){
+								if(outPutSetOther.contains(kv.getKey().getName()) || outPutSetOther.contains(getORMName(kv.getKey().getName()))){
 									vo.getClass().getMethod(kv.getValue()).invoke(vo);
 								}
 							}
@@ -997,12 +1052,15 @@ public class CacheVo implements ApplicationContextAware{
 				return listVO;
 			}else{
 				CustomCacheBean bean = customCacheMap.get(group);
+				logger.error("---"+bean.toString(this));
 				Map<String, String> mapValue = new RedisAPI(redisObj).hgetAll(bean.toString(this));
 				if(mapValue == null || mapValue.size() == 0){
 					SQLWhere sqlWhere = new SQLWhere();
 					Map<String,String> columnORM = getCustomORM();
 					for(Field field : bean.getField())
 						sqlWhere.and(new EQCnd(columnORM.get(field.getName()), getFieldValue(field)));
+					
+					logger.error("*************sqlWhere="+sqlWhere.toString());
 					List<T> list = getListVO(0,10000,sqlWhere);
 					if(list != null && list.size() > 0){
 						for(T vo : list){
@@ -1153,9 +1211,9 @@ public class CacheVo implements ApplicationContextAware{
 		}
 		
 		Map<Field,String> out = getOutPutMap();
-		if(outPutSet != null && outPutSet.size() > 0 && out != null && out.size() > 0){
+		if(outPutSetOther != null && outPutSetOther.size() > 0 && out != null && out.size() > 0){
 			for(Map.Entry<Field, String> kv : out.entrySet()){
-				if(outPutSet.contains(kv.getKey().getName())){
+				if(outPutSetOther.contains(kv.getKey().getName())){
 					try {
 						Object obj = this.getClass().getMethod(kv.getValue()).invoke(this);
 						jo.addProperty(kv.getKey().getName(), String.valueOf(obj));
@@ -1311,11 +1369,12 @@ public class CacheVo implements ApplicationContextAware{
 	 */
 	public int delete() throws Exception{
 		loadVo();
+		deleteNoSql();
+		deleteCustomCacheAll();//删除自定义缓存
 		StringBuilder sql = new StringBuilder("delete FROM ").append(getTableName());
 		sql.append(" where ").append(getCustomORM().get(getPKField().getName())).append(" = ").append(getIdValue().toString());
 		int index = getJdbcDao().update(sql.toString(),null);
-		deleteNoSql();
-		deleteCustomCacheAll();//删除自定义缓存
+		
 		return index;
 	}
 	

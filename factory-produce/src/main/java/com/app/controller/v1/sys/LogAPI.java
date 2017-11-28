@@ -39,7 +39,7 @@ public class LogAPI extends Result{
    
     
     @RequestMapping(method=RequestMethod.GET,value="/list")
-    public String list(@RequestParam String aoData) throws Exception{
+    public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
     	
     	int iDisplayStart = 0;// 起始  
@@ -72,11 +72,15 @@ public class LogAPI extends Result{
     }
     
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
-    public String delete(@PathVariable("id") Long id) throws Exception{
+    public String delete(@PathVariable("id") Long id) {
     	SysLogEntity log = new SysLogEntity(jdbcDao);
     	log.setLogId(id);
-    	log.delete();
-        return success("删除成功");
+    	try{
+    		log.delete();
+    		return success("删除成功");
+    	}catch(Exception e){
+    		return error("删除失败");
+    	}
     }
     
     
@@ -84,17 +88,22 @@ public class LogAPI extends Result{
      * 批量删除
      * @param ids
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method=RequestMethod.DELETE,value="/deleteBatch/{ids}")
-    public String deleteBatch(@PathVariable(name="ids",required=true) String ids) throws Exception{
-    	String [] logIds = ids.split(",");
-    	for(String id : logIds){
-    		SysLogEntity log = new SysLogEntity(jdbcDao);
-    		log.setLogId(Long.parseLong(id));
-    		log.delete();
+    public String deleteBatch(@PathVariable(name="ids",required=true) String ids) {
+    	try{
+    		String [] logIds = ids.split(",");
+        	for(String id : logIds){
+        		SysLogEntity log = new SysLogEntity(jdbcDao);
+        		log.setLogId(Long.parseLong(id));
+        		log.delete();
+        	}
+        	return success("批量删除成功");
+    	}catch(Exception e){
+    		return error("批量删除失败");
     	}
-    	return success("批量删除成功");
+    	
     }
     
     

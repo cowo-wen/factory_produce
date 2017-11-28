@@ -32,7 +32,8 @@ public class LoginSuccessHandler extends  SavedRequestAwareAuthenticationSuccess
         SysUserEntity userDetails = (SysUserEntity)authentication.getPrincipal();    
         SysLogEntity sysLogEntity = new SysLogEntity(null);
         sysLogEntity.setUserId(userDetails.getUserId());
-        sysLogEntity.setApplicationId(1L);
+        sysLogEntity.setApplicationCode("100");
+        //sysLogEntity.setApplicationId(1L);
         sysLogEntity.setIp(getIpAddress(request));
         sysLogEntity.setType(SysLogEntity.TYPE_SUCCESS);
         sysLogEntity.setMessage(userDetails.getUserName()+"于"+PublicMethod.formatDateStr("yyyy-MM-dd HH:mm:ss") + " 登录成功");

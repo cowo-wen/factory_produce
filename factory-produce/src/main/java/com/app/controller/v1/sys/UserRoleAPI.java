@@ -39,7 +39,7 @@ public class UserRoleAPI extends Result{
     
     
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list_user/{id}")
-    public String listByRole(@PathVariable("id") Long id) throws Exception{
+    public String listByRole(@PathVariable("id") Long id) {
     	
     	
     	if(id == null || id < 0){

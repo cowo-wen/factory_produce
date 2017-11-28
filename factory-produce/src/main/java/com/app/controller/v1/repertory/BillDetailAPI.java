@@ -38,10 +38,10 @@ public class BillDetailAPI extends Result{
      * 查询列表
      * @param aoData
      * @return
-     * @throws Exception
+     * @
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
-    public String list(@RequestParam String aoData) throws Exception{
+    public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
     	SQLWhere sql = new SQLWhere().orderBy(new DescSort(RepertoryGoodsBillDetailEntity.BILL_DETAIL_ID));
     	for(JsonElement je : jo){
@@ -60,7 +60,7 @@ public class BillDetailAPI extends Result{
     	logger.error(aoData);
     	RepertoryGoodsBillDetailEntity entity = new RepertoryGoodsBillDetailEntity(jdbcDao);
     	
-    	entity.outPut(RepertoryGoodsBillDetailEntity.TYPE,RepertoryGoodsBillDetailEntity.NAME,RepertoryGoodsBillDetailEntity.CODE,RepertoryGoodsBillDetailEntity.GOODS_BATCH_CODE);
+    	entity.outPutOther(RepertoryGoodsBillDetailEntity.TYPE,RepertoryGoodsBillDetailEntity.NAME,RepertoryGoodsBillDetailEntity.CODE,RepertoryGoodsBillDetailEntity.GOODS_BATCH_CODE);
     	List<RepertoryGoodsBillDetailEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
     	
     	
