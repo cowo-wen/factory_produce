@@ -147,6 +147,8 @@ public class ProduceAPI extends Result{
     }
     
     
+    
+    
     /**
      * 查询需要的原料批次列表
      * @param aoData
@@ -214,7 +216,6 @@ public class ProduceAPI extends Result{
 		 */
     	
 		List<RepertoryGoodsComponentEntity> list  = new RepertoryGoodsComponentEntity(jdbcDao).setGoodsId(entity.getGoodsId()).queryCustomCacheValue(0);
-		logger.error(amount+"-----------------"+entity.getGoodsId()+" --- "+list.size());
 		if(list.size() > 0 && amount > 0){
 			for(RepertoryGoodsComponentEntity component : list){
 				int number = amount * component.getNumber();
@@ -263,15 +264,54 @@ public class ProduceAPI extends Result{
 				
 			}
 		}
-		TaskReviewEntity review = new TaskReviewEntity(jdbcDao);
-		review.outPutOther(TaskReviewEntity.USER_NAME);
-		List<TaskReviewEntity> reviewList = review.getListVO(0, 1000, new SQLWhere(new EQCnd(TaskReviewEntity.PRODUCE_ID, id)).orderBy(new DescSort(TaskReviewEntity.REVIEW_ID)));
 		
 		Map<String,Object> map = new HashMap<String,Object>();
     	map.put("data", entity);
     	map.put("batch_list", batchList2);
-    	map.put("review_list", reviewList);
+    	map.put("review_list", getCheckProduceData(id));//获取任务的审核数据
     	return success(map);
+    }
+    
+    
+    /**
+     * 获取任务的审核数据
+     * @param id
+     * @return
+     */
+    private List<TaskReviewEntity> getCheckProduceData(Long id){
+    	TaskReviewEntity review = new TaskReviewEntity(jdbcDao);
+		review.outPutOther(TaskReviewEntity.USER_NAME);
+		List<TaskReviewEntity> reviewList = review.getListVO(0, 1000, new SQLWhere(new EQCnd(TaskReviewEntity.PRODUCE_ID, id)).orderBy(new DescSort(TaskReviewEntity.REVIEW_ID)));
+		return reviewList;
+    }
+    
+    /**
+     * 获取任务的工人数据
+     * @param id
+     * @return
+     */
+    private List<TaskWorkerEntity> getWorkerProduceData(Long id){
+    	List<TaskWorkerEntity> list = new TaskWorkerEntity(jdbcDao).setProduceId(id).queryCustomCacheValue(0);
+    	for(TaskWorkerEntity worker : list){
+    		SysUserEntity user = new SysUserEntity(jdbcDao);
+    		user.setUserId(worker.getUserId()).loadVo();
+    		worker.setUserName(user.getUserName());
+    		worker.setUserCode(user.getNumber());
+    	}
+    	return list;
+    }
+    
+    /**
+     * 获取任务的消耗原料数据
+     * @param id
+     * @return
+     */
+    private List<TaskLockComponentEntity> getMaterialProduceData(Long id){
+    	TaskLockComponentEntity lockComponent = new TaskLockComponentEntity(jdbcDao);
+    	lockComponent.outPutOther(TaskLockComponentEntity.GOODS_BATCH_CODE,TaskLockComponentEntity.CODE,TaskLockComponentEntity.NAME,TaskLockComponentEntity.TYPE,TaskLockComponentEntity.GOODS_ID);
+    	List<TaskLockComponentEntity> list = lockComponent.setProduceId(id).queryCustomCacheValue(0);
+    	
+    	return list;
     }
     
     /**
@@ -505,7 +545,7 @@ public class ProduceAPI extends Result{
     		if((","+entity.getDirector()+",").indexOf(String.valueOf(","+userId+",")) == -1){
     			return error("没有权限申领");
     		}
-    		List<TaskLockComponentEntity> list = new TaskLockComponentEntity(jdbcDao).setProduceId(id).queryCustomCacheValue(0);
+    		List<TaskLockComponentEntity> list = getMaterialProduceData(id);
     		RepertoryGoodsBillEntity goodsBill = new RepertoryGoodsBillEntity(jdbcDao);
     		goodsBill.setProduceId(id);
     		goodsBill.setType(RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_APPLY);
@@ -515,13 +555,10 @@ public class ProduceAPI extends Result{
     		goodsBill.setTitle(entity.getProduceName());
     		Long billId = goodsBill.insert();
     		for(TaskLockComponentEntity component : list){
-    			RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(jdbcDao);
-    			batch.setGoodsBatchId(component.getGoodsBatchId()).loadVo();
-    			
     			RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(jdbcDao);
     			detail.setGoodsBillId(billId);
-    			detail.setGoodsBatchId(batch.getGoodsBatchId());
-    			detail.setGoodsId(batch.getGoodsId());
+    			detail.setGoodsBatchId(component.getGoodsBatchId());
+    			detail.setGoodsId(component.getGoodsId());
     			detail.setNumber(component.getNumber());
     			detail.applyInsert();
     		}
@@ -549,18 +586,30 @@ public class ProduceAPI extends Result{
     	entity.getName();
     	Map<String,Object> map = new HashMap<String,Object>();
     	map.put("data", entity);
-    	List<TaskWorkerEntity> list = new TaskWorkerEntity(jdbcDao).setProduceId(id).queryCustomCacheValue(0);
-    	for(TaskWorkerEntity worker : list){
-    		SysUserEntity user = new SysUserEntity(jdbcDao);
-    		user.setUserId(worker.getUserId()).loadVo();
-    		worker.setUserName(user.getUserName());
-    		worker.setUserCode(user.getNumber());
-    	}
-    	
-    	
-    	map.put("worker", list);
+    	map.put("worker", getWorkerProduceData(id));
         return success(map);
     }
+    
+    /**
+     * 获取详细数据
+     * @param id
+     * @return
+     * @
+     */
+    @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/view/{id}")
+    public String view(@PathVariable("id") Long id) {
+    	TaskProduceEntity entity = new TaskProduceEntity(jdbcDao);
+    	
+    	entity.setProduceId(id).loadVo();
+    	entity.getName();
+    	Map<String,Object> map = new HashMap<String,Object>();
+    	map.put("data", entity);
+    	map.put("worker_list", getWorkerProduceData(id));
+    	map.put("material_list", getMaterialProduceData(id));
+    	map.put("review_list", getCheckProduceData(id));//获取任务的审核数据
+        return success(map);
+    }
+
 
     
     /**

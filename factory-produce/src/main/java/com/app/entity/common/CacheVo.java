@@ -194,6 +194,9 @@ public class CacheVo implements ApplicationContextAware{
 			}else if(constructionType == 3){
 				vo = (T) this.getClass().getConstructor(String.class,JdbcDao.class).newInstance(redisObj,jdbcDao);
 			}
+			vo.outPutOther(outPutSetOther);
+			vo.outPutField(outPutFieldSet);
+			vo.outPutIgnore(outPutIgnoreSet);
 		} catch (Exception e) {
 			logger.error("反映创建对象失败="+this.getClass(), e);
 		} 
@@ -690,7 +693,7 @@ public class CacheVo implements ApplicationContextAware{
 	private CacheVo setVo(JsonObject jo){
 		List<Field> list =  getColumnField();
 		Map<String,String>  map = getCustomORM();
-		Date date = PublicMethod.stringToDate("1970-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss");
+		//Date date = PublicMethod.stringToDate("1970-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss");
 		for(Field field : list){
 			try{
 				String name = "";
@@ -699,9 +702,9 @@ public class CacheVo implements ApplicationContextAware{
 				}else if(jo.has(name = map.get(field.getName()))){
 					setValueToVo( field, jo, name);
 				}else{
-					if(field.getType().equals(Date.class)){
-						setFieldValue(field,date);
-					}
+					//if(field.getType().equals(Date.class)){
+					//	setFieldValue(field,date);
+					//}
 				}
 				
 			}catch(Exception e){
@@ -766,29 +769,51 @@ public class CacheVo implements ApplicationContextAware{
 	 * @return
 	 */
 	public CacheVo loadVo(){
-		
-		if (isChache()) {//使用缓存
-			String result = new RedisAPI(redisObj).get(getEntityCacheKeyName());
-			if(PublicMethod.isEmptyStr(result)){
-				CacheVo vo = getVoFromDB();//返回的是this
-				if(vo != null){
-					vo.insertNosql(1);//插入缓存
-					return vo;
+		CacheVo vo = null;
+		try{
+			if (isChache()) {//使用缓存
+				String result = new RedisAPI(redisObj).get(getEntityCacheKeyName());
+				if(PublicMethod.isEmptyStr(result)){
+					vo = getVoFromDB();//返回的是this
+					if(vo != null){
+						vo.insertNosql(1);//插入缓存
+						return vo;
+					}else{
+						insertNosql(0);//插入缓存
+						return null;
+					}
+					
 				}else{
-					insertNosql(0);//插入缓存
-					return null;
+					if(result.equals(ZERO)){
+						return null;
+					}else{
+						return vo = setVo(new JsonParser().parse(result).getAsJsonObject());//返回的是this
+					}
 				}
-				
-			}else{
-				if(result.equals(ZERO)){
-					return null;
-				}else{
-					return setVo(new JsonParser().parse(result).getAsJsonObject());//返回的是this
+			}else{//不使用缓存
+				return vo = getVoFromDB();//返回的是this
+			}
+		}finally{
+			if(vo != null){
+				Map<Field,String> out = vo.getOutPutMap();
+				if(vo.outPutSetOther != null && vo.outPutSetOther.size() > 0 && out != null && out.size() > 0){
+					for(Map.Entry<Field, String> kv : out.entrySet()){
+						if(outPutSetOther.contains(kv.getKey().getName()) || vo.outPutSetOther.contains(getORMName(kv.getKey().getName()))){
+							try {
+								getClass().getMethod(kv.getValue()).invoke(this);
+							} catch (Exception e) {
+								e.printStackTrace();
+								logger.error("输出其他字段", e);
+							}
+						}
+					}
+					
 				}
 			}
-		}else{//不使用缓存
-			return getVoFromDB();//返回的是this
+			
 		}
+		
+		
 	}
 	
 	/**
@@ -830,9 +855,9 @@ public class CacheVo implements ApplicationContextAware{
 			}
 		}
 		
-		logger.error("------修改前："+toString());
+		//logger.error("------修改前："+toString());
 		setVo(jo);
-		logger.error("------修改后："+toString());
+		//logger.error("------修改后："+toString());
 		return this;
 	}
 	
@@ -858,6 +883,15 @@ public class CacheVo implements ApplicationContextAware{
 	}
 	
 	/**
+	 * 输出其他字段
+	 * @param fieldName
+	 */
+	protected void outPutOther(Set<String> outPutSetOther){
+		this.outPutSetOther = outPutSetOther;
+		
+	}
+	
+	/**
 	 * 忽略输出字段，如果存在输出常规字段，即该方法无效
 	 * @param fieldName
 	 */
@@ -873,6 +907,15 @@ public class CacheVo implements ApplicationContextAware{
 				
 			}
 		}		
+	}
+	
+	/**
+	 * 忽略输出字段，如果存在输出常规字段，即该方法无效
+	 * @param fieldName
+	 */
+	protected void outPutIgnore(Set<String> outPutIgnoreSet){
+		this.outPutIgnoreSet = outPutIgnoreSet;
+		
 	}
 	/**
 	 * 输出常规字段，该显示方式会导致忽略输出字段无效
@@ -892,6 +935,15 @@ public class CacheVo implements ApplicationContextAware{
 		}
 		
 		
+		
+	}
+	
+	/**
+	 * 输出常规字段，该显示方式会导致忽略输出字段无效
+	 * @param fieldName
+	 */
+	protected void outPutField(Set<String> outPutFieldSet){
+		this.outPutFieldSet = outPutFieldSet;
 		
 	}
 	
@@ -1052,7 +1104,6 @@ public class CacheVo implements ApplicationContextAware{
 				return listVO;
 			}else{
 				CustomCacheBean bean = customCacheMap.get(group);
-				logger.error("---"+bean.toString(this));
 				Map<String, String> mapValue = new RedisAPI(redisObj).hgetAll(bean.toString(this));
 				if(mapValue == null || mapValue.size() == 0){
 					SQLWhere sqlWhere = new SQLWhere();
@@ -1060,7 +1111,6 @@ public class CacheVo implements ApplicationContextAware{
 					for(Field field : bean.getField())
 						sqlWhere.and(new EQCnd(columnORM.get(field.getName()), getFieldValue(field)));
 					
-					logger.error("*************sqlWhere="+sqlWhere.toString());
 					List<T> list = getListVO(0,10000,sqlWhere);
 					if(list != null && list.size() > 0){
 						for(T vo : list){

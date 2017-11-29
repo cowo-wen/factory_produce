@@ -13,11 +13,16 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
+import com.app.entity.repertory.RepertoryGoodsBatchEntity;
+import com.app.entity.repertory.RepertoryGoodsEntity;
+import com.app.util.PublicMethod;
+import com.google.gson.annotations.Expose;
 
 /**
  * 功能说明：任务生产关联的配件信息
@@ -43,6 +48,7 @@ public class TaskLockComponentEntity extends CacheVo  implements Serializable
     private Long lockComponentId;
 	
 	public static final String PRODUCE_ID = "produce_id";
+	@CustomCache(sort=0)
     @Column
     private Long produceId;
 	
@@ -69,6 +75,47 @@ public class TaskLockComponentEntity extends CacheVo  implements Serializable
     
     @Column
     private Date operatorTime;
+    
+    
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    public static final String NAME = "name";
+    @Transient
+    @Expose(deserialize = true)
+    private String name;
+
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    public static final String TYPE = "type";
+    @Transient
+    @Expose(deserialize = true)
+    private Integer type;
+
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    public static final String CODE = "code";
+    @Transient
+    @Expose(deserialize = true)
+    private String code;
+    
+    /**
+	 * 批次代码
+	 */
+	public static final String GOODS_BATCH_CODE = "goods_batch_code";
+	@Transient
+	@Expose(deserialize = true)
+    private String goodsBatchCode;
+	
+	/**
+	 * 产品id
+	 */
+	public static final String GOODS_ID = "goods_id";
+	@Transient
+	@Expose(deserialize = true)
+    private Long goodsId;
     
     
     
@@ -130,6 +177,62 @@ public class TaskLockComponentEntity extends CacheVo  implements Serializable
 	public TaskLockComponentEntity setOperatorTime(Date operatorTime) {
 		this.operatorTime = operatorTime;
 		return this;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public Integer getType() {
+		return type;
+	}
+
+	public void setType(Integer type) {
+		this.type = type;
+	}
+
+	public String getCode() {
+		return code;
+	}
+
+	public void setCode(String code) {
+		this.code = code;
+	}
+	
+	
+
+	public Long getGoodsId() {
+		return goodsId;
+	}
+
+	public void setGoodsId(Long goodsId) {
+		this.goodsId = goodsId;
+	}
+
+	public String getGoodsBatchCode() {
+		if(!PublicMethod.isEmptyValue(goodsBatchId)){
+			RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(jdbcDao);
+			batch.setGoodsBatchId(goodsBatchId).loadVo();
+			goodsBatchCode = batch.getGoodsBatchCode();
+			
+			if(!PublicMethod.isEmptyValue(batch.getGoodsId())){
+				RepertoryGoodsEntity goods = new RepertoryGoodsEntity(jdbcDao);
+				goods.setGoodsId(batch.getGoodsId()).loadVo();
+				code = goods.getCode();
+				name = goods.getName();
+				type = goods.getType();
+				goodsId = goods.getGoodsId();
+			}
+		}
+		return goodsBatchCode;
+	}
+
+	public void setGoodsBatchCode(String goodsBatchCode) {
+		this.goodsBatchCode = goodsBatchCode;
 	}
 
     

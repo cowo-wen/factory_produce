@@ -201,7 +201,6 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 
 	public TaskProduceEntity(JdbcDao jdbcDao) {
 		super(jdbcDao);
-		// TODO Auto-generated constructor stub
 	}
 
 	public Long getProduceId() {
@@ -367,12 +366,16 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 	
 
 	public String getDirectorName() {
+		this.directorName ="";
 		if(!PublicMethod.isEmptyStr(this.director)){
 			String [] userId = this.director.split(",");
 			for(String id : userId){
 				SysUserEntity user = new SysUserEntity(jdbcDao);
 				user.setUserId(Long.parseLong(id)).loadVo();
-				this.directorName += user.getUserName()+" ";
+				if(!PublicMethod.isEmptyStr(user.getUserName())){
+					this.directorName += user.getUserName()+" ";
+				}
+				
 			}
 		}
 		return this.directorName;
