@@ -17,7 +17,6 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import com.app.dao.JdbcDao;
-import com.app.entity.business.BusinessCheckLogEntity;
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
@@ -328,6 +327,10 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
 			throw new Exception("审核通过的数据不能删除");
 		}
 		
+		if( !PublicMethod.isEmptyValue(bill.getProduceId())){
+			throw new Exception("该数据不允许删除");
+		}
+		
 		RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(this.jdbcDao);
 		detail.setGoodsBillId(this.goodsBillId);
 		List<RepertoryGoodsBillDetailEntity> list = detail.queryCustomCacheValue(0);
@@ -340,124 +343,7 @@ public class RepertoryGoodsBillEntity extends CacheVo  implements Serializable
 		return super.delete();
 	}
 
-	@Override
-	public int update(String... fieldName) throws Exception {
-		RepertoryGoodsBillEntity bill = new RepertoryGoodsBillEntity(this.jdbcDao);
-		bill.setGoodsBillId(this.goodsBillId);
-		bill.loadVo();
-		if(bill.checkStatus == StaticBean.YES){
-			throw new Exception("审核通过的数据不能修改");
-		}
-		
-		if(bill.checkStatus != checkStatus){
-			Date date = new Date();
-			if(checkStatus == StaticBean.YES){
-				checkTime = PublicMethod.formatDateStr(date);
-			}else if(checkStatus == StaticBean.NO){
-				BusinessCheckLogEntity log = new BusinessCheckLogEntity();
-				log.setRemark(checkRemark);
-				log.setType(BusinessCheckLogEntity.TYPE_REPERTORY_GOODS_BILL);
-				log.setCheckStatus(checkStatus);
-				log.setDataId(goodsBillId);
-				log.setCheckTime(date);
-				log.setCheckUser(checkUser);
-				log.setNumber(0L);
-				log.insert();
-				checkTime = PublicMethod.formatDateStr(date);
-			}
-		}else if(bill.checkStatus == StaticBean.NO){
-			checkStatus = StaticBean.WAIT;
-		}
-		int id = super.update(fieldName);
-		if(this.checkStatus == StaticBean.YES){//审核通过
-			RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(this.jdbcDao);
-			detail.setGoodsBillId(this.goodsBillId);
-			List<RepertoryGoodsBillDetailEntity> list = detail.queryCustomCacheValue(0);
-			if(list != null && list.size() > 0){
-				switch(type){
-					case GOODS_DETAIL_TYPE_CHECK://盘点
-						for(RepertoryGoodsBillDetailEntity obj : list){
-							RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(this.jdbcDao);//更新批次信息
-							if(!PublicMethod.isEmptyValue(obj.getGoodsBatchId())){
-								batch.setGoodsBatchId(obj.getGoodsBatchId()).loadVo();
-								batch.setInventory(batch.getInventory()+obj.getNumber());//批次库存+-
-								batch.update();
-							}else{
-								batch.setInventory(obj.getNumber());//批次库存+-
-								batch.setGoodsId(obj.getGoodsId());
-								batch.setGoodsBatchCode(goodsBatchCode);
-								batch.insert();
-							}
-							
-							
-						}
-						break;
-					case GOODS_DETAIL_TYPE_APPLY://申领 批次锁定-
-						for(RepertoryGoodsBillDetailEntity obj : list){
-							RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(this.jdbcDao);
-							if(!PublicMethod.isEmptyValue(obj.getGoodsBatchId())){
-								batch.setGoodsBatchId(obj.getGoodsBatchId()).loadVo();
-								batch.setLocking(batch.getLocking() - obj.getNumber());
-								batch.update();
-							}else{
-								throw new Exception("申领单的批次id不能为空");
-							}
-							
-						}
-						break;
-					case GOODS_DETAIL_TYPE_BUY://入库
-						for(RepertoryGoodsBillDetailEntity obj : list){
-							RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(this.jdbcDao);
-							if(!PublicMethod.isEmptyValue(obj.getGoodsBatchId())){
-								batch.setGoodsBatchId(obj.getGoodsBatchId()).loadVo();
-								batch.setInventory(batch.getInventory()+obj.getNumber());//批次库存+-
-								batch.update();
-								
-							}else{
-								batch.setInventory(obj.getNumber());
-								batch.setGoodsId(obj.getGoodsId());
-								batch.setGoodsBatchCode(goodsBatchCode);
-								batch.insert();
-							}
-							
-						}
-						break;
-					case GOODS_DETAIL_TYPE_PRODUCE://生产
-						for(RepertoryGoodsBillDetailEntity obj : list){
-							if(!PublicMethod.isEmptyValue(obj.getGoodsBatchId())){
-								RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(this.jdbcDao);
-								batch.setGoodsBatchId(obj.getGoodsBatchId()).loadVo();
-								batch.setInventory(batch.getInventory()+obj.getNumber());
-								batch.update();
-							}else{
-								RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(this.jdbcDao);
-								batch.setGoodsBatchCode(goodsBatchCode);
-								batch.setGoodsId(obj.getGoodsId());
-								batch.setInventory(obj.getNumber());
-								batch.insert();
-							}
-							
-						}
-						break;
-					case GOODS_DETAIL_TYPE_SELL://出货
-						for(RepertoryGoodsBillDetailEntity obj : list){
-							RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(this.jdbcDao);
-							if(!PublicMethod.isEmptyValue(obj.getGoodsBatchId())){
-								batch.setGoodsBatchId(obj.getGoodsBatchId()).loadVo();
-								batch.setInventory(batch.getInventory()-obj.getNumber());
-								batch.update();
-							}else{
-								throw new Exception("出货单的批次id不能为空");
-							}
-						}
-						break;
-				}
-			}
-			
-			
-		}
-		return id;
-	}
+	
 
 	public Long getProduceId() {
 		return produceId;

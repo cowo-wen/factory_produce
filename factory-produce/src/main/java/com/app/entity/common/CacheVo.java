@@ -958,7 +958,7 @@ public class CacheVo implements ApplicationContextAware{
 			List<Field>  list = getColumnField();
 			Map<String,String> columnORM = getCustomORM();
 			Map<Field,String> out = getOutPutMap();
-			Date date = new Date();
+			//Date date = new Date();
 			for(Map<String,Object> mapVo : listMap){
 				if(mapVo != null && mapVo.size() > 0){
 					try {
@@ -966,6 +966,8 @@ public class CacheVo implements ApplicationContextAware{
 						vo.outPutOther(this.outPutFieldsOther);
 						for (Field field : list) {
 							
+							
+							/*
 							if(field.getType().equals(java.util.Date.class)){
 								if(mapVo.containsKey(columnORM.get(field.getName()))){
 									Object obj = mapVo.get(columnORM.get(field.getName()));
@@ -976,7 +978,7 @@ public class CacheVo implements ApplicationContextAware{
 									}
 									
 								}
-							}
+							}*/
 							
 							
 							
@@ -992,7 +994,7 @@ public class CacheVo implements ApplicationContextAware{
 								}
 							}
 							
-							if(!field.getType().equals(java.util.Date.class)){
+							//if(!field.getType().equals(java.util.Date.class)){
 								if(mapVo.containsKey(columnORM.get(field.getName()))){
 									Object obj = mapVo.get(columnORM.get(field.getName()));
 									if(obj != null){
@@ -1000,7 +1002,7 @@ public class CacheVo implements ApplicationContextAware{
 									}
 									
 								}
-							}
+							//}
 							
 						}
 						

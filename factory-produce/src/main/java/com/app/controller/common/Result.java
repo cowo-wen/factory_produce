@@ -37,6 +37,7 @@ public class Result {
 	
 	protected JdbcDao jdbcDao;
 	
+	
 	private static final Gson gson = new GsonBuilder().serializeNulls().registerTypeAdapter(java.util.Date.class, new GsonDateConverter()).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 	
 	
@@ -104,6 +105,12 @@ public class Result {
 			if(map.containsKey("message")){
 				map.put("message", "");
 			}
+		}else if(obj.getClass().equals(String.class)){
+			map = new HashMap<String,Object>();
+	    	map.put("status", 200);
+	    	map.put("message", obj.toString());
+	    	map.put("data", obj);
+	    	map.put("id", "成功");
 		}else{
 			map = new HashMap<String,Object>();
 	    	map.put("status", 200);
@@ -140,6 +147,7 @@ public class Result {
 		SysLogEntity log = new SysLogEntity(jdbcDao);
 		log.setApplicationCode(applicationCode);
 		log.setDataId(id);
+		log.setIp(ip);
 		log.setUserId(getLoginUser().getUserId());
 		log.setType(SysLogEntity.TYPE_SUCCESS);
 		log.setMessage(message);

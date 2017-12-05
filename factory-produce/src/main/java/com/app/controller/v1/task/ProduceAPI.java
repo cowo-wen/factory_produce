@@ -6,8 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +38,7 @@ import com.app.entity.task.TaskLockComponentEntity;
 import com.app.entity.task.TaskProduceEntity;
 import com.app.entity.task.TaskReviewEntity;
 import com.app.entity.task.TaskWorkerEntity;
+import com.app.util.NetworkUtil;
 import com.app.util.PublicMethod;
 import com.app.util.StaticBean;
 import com.google.gson.JsonArray;
@@ -53,7 +57,8 @@ import com.google.gson.JsonParser;
 public class ProduceAPI extends Result{
     public static Log logger = LogFactory.getLog(ProduceAPI.class);
     
-    
+    @Autowired  
+    private HttpServletRequest request;
     
     /**
      * 查询任务列表
@@ -323,7 +328,6 @@ public class ProduceAPI extends Result{
     public String replenish(@RequestParam String aoData) {
     	try{
 	    	TaskProduceEntity entity = new TaskProduceEntity(jdbcDao);
-	    	logger.error("-------aoData="+aoData);
 	    	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
 	    	entity.parse(jo);
 	    	
@@ -354,7 +358,7 @@ public class ProduceAPI extends Result{
 	    				lockComponent.setGoodsBatchId(object.get(TaskLockComponentEntity.GOODS_BATCH_ID).getAsLong());
 	    				lockComponent.setProduceId(entity.getProduceId());
 	    				lockComponent.setNumber(object.get("value").getAsInt());
-	    				lockComponent.insert();
+	    				long lcId = lockComponent.insert();
 	    				RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(jdbcDao);
 	    				batch.setGoodsBatchId(lockComponent.getGoodsBatchId()).loadVo();
 	    				RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(jdbcDao);
@@ -363,6 +367,7 @@ public class ProduceAPI extends Result{
 	    				detail.setNumber(object.get("value").getAsInt());
 	    				detail.setType(bill.getType());
 	    				detail.setGoodsBillId(id);
+	    				detail.setLockComponentId(lcId);
 	    				detail.insert();
 	    			
 	    			}
@@ -419,9 +424,35 @@ public class ProduceAPI extends Result{
     
     
     
-
     
     
+    /**
+     * 拒绝任务
+     * @param id
+     * @return
+     * @
+     */
+    @RequestMapping(method = { RequestMethod.POST },value="/refuse/{id}")
+    public String refuse(@PathVariable("id") Long id,@RequestParam String application_code) {
+    	TaskProduceEntity entity = new TaskProduceEntity(jdbcDao);
+    	
+    	entity.setProduceId(id).loadVo();
+    	long userId = getLoginUser().getUserId();
+		if((","+entity.getDirector()+",").indexOf(String.valueOf(","+userId+",")) == -1){
+			return error("没有权限拒绝");
+		}
+		try{
+			entity.setStatus(TaskProduceEntity.PRODUC_STATUS_REFUSE);//更新状态为拒绝
+    		entity.update(TaskProduceEntity.STATUS);
+			insertLog(application_code,id,NetworkUtil.getIpAddress(request),"");//插入日志
+			return success("成功");
+		}catch(Exception e){
+			return error("失败:"+e.getMessage());
+		}
+		
+    	
+    	
+    }
     
     /**
      * 提交完成
@@ -443,7 +474,7 @@ public class ProduceAPI extends Result{
     		if((","+entity.getDirector()+",").indexOf(String.valueOf(","+userId+",")) == -1){
     			return error("没有权限提交完成");
     		}
-    		insertLog(application_code,id,"","");//插入日志
+    		insertLog(application_code,id,NetworkUtil.getIpAddress(request),"");//插入日志
     		entity.setStatus(TaskProduceEntity.PRODUC_STATUS_CHECK_PENDING);//更新状态正在进行
     		entity.update(TaskProduceEntity.STATUS);
     		return success("提交成功");
@@ -545,6 +576,10 @@ public class ProduceAPI extends Result{
     		if((","+entity.getDirector()+",").indexOf(String.valueOf(","+userId+",")) == -1){
     			return error("没有权限申领");
     		}
+    		
+    		if(entity.getBeginTime().getTime() > System.currentTimeMillis()){
+    			return error("任务未开始,不能领料");
+    		}
     		List<TaskLockComponentEntity> list = getMaterialProduceData(id);
     		RepertoryGoodsBillEntity goodsBill = new RepertoryGoodsBillEntity(jdbcDao);
     		goodsBill.setProduceId(id);
@@ -560,6 +595,7 @@ public class ProduceAPI extends Result{
     			detail.setGoodsBatchId(component.getGoodsBatchId());
     			detail.setGoodsId(component.getGoodsId());
     			detail.setNumber(component.getNumber());
+    			detail.setLockComponentId(component.getLockComponentId());
     			detail.applyInsert();
     		}
     		entity.setStatus(TaskProduceEntity.PRODUC_STATUS_WORKING);//更新状态正在进行
@@ -645,8 +681,8 @@ public class ProduceAPI extends Result{
 	    	TaskProduceEntity entity = new TaskProduceEntity(jdbcDao);
 	    	logger.error("-------"+aoData);
 	    	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
-	    	jo.addProperty("begin_time", jo.get("begin_time").getAsString()+" 00:00:00");
-	    	jo.addProperty("end_time", jo.get("end_time").getAsString()+" 23:59:59");
+	    	//jo.addProperty("begin_time", jo.get("begin_time").getAsString()+" 00:00:00");
+	    	//jo.addProperty("end_time", jo.get("end_time").getAsString()+" 23:59:59");
 	    	entity.parse(jo);
 	    	
 	    	if(entity.getStatus() != TaskProduceEntity.PRODUC_STATUS_PREP){
@@ -722,8 +758,8 @@ public class ProduceAPI extends Result{
     public String add(@RequestParam String aoData) {
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
     	TaskProduceEntity entity = new TaskProduceEntity(jdbcDao);
-    	jo.addProperty("begin_time", jo.get("begin_time").getAsString()+" 00:00:00");
-    	jo.addProperty("end_time", jo.get("end_time").getAsString()+" 23:59:59");
+    	//jo.addProperty("begin_time", jo.get("begin_time").getAsString()+" 00:00:00");
+    	//jo.addProperty("end_time", jo.get("end_time").getAsString()+" 23:59:59");
     	entity.parse(jo);
     	
     	

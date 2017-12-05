@@ -69,6 +69,10 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
     @Column
     private Long goodsBatchId;
     
+    public static final String LOCK_COMPONENT_ID = "lock_component_id";
+    @Column
+    private Long lockComponentId;
+    
     /**
      * 数量
      */
@@ -230,6 +234,17 @@ public class RepertoryGoodsBillDetailEntity extends CacheVo  implements Serializ
 	}
 	
 	
+	
+	
+	
+	public Long getLockComponentId() {
+		return lockComponentId;
+	}
+
+	public void setLockComponentId(Long lockComponentId) {
+		this.lockComponentId = lockComponentId;
+	}
+
 	public long applyInsert() throws Exception{
 		return super.insert();
 	}

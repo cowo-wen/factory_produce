@@ -68,6 +68,11 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 	 * 返工
 	 */
 	public static final int PRODUC_STATUS_REDO = 2;
+	
+	/**
+	 * 拒绝
+	 */
+	public static final int PRODUC_STATUS_REFUSE=6;
 
 	public static final String PRODUCE_ID = "produce_id";
 	@Id
