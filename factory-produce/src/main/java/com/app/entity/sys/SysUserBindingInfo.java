@@ -16,6 +16,7 @@ import javax.persistence.Table;
 
 import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
+import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
 
 /**
@@ -54,10 +55,11 @@ public class SysUserBindingInfo extends CacheVo  implements Serializable
     /** 微信身份唯一码 */
     public static final String OPEN_ID = "open_id";
 
+    @CustomCache(sort = {0,2},gorup={0,1},hashKey={false,true})
     @Column
     private String openId;
 
-    
+    @CustomCache(sort = {2,0},gorup={0,1},hashKey={true,false})
     /** 数据id 绑定的学生id*/
     public static final String USER_ID = "user_id";
 
@@ -66,10 +68,22 @@ public class SysUserBindingInfo extends CacheVo  implements Serializable
     
     /** 1为微信*/
     public static final String TYPE = "type";
-
+    @CustomCache(sort = 1,gorup={0,1})
     @Column
     private Integer type;
     
+    
+    /**昵称 */
+    public static final String NICKNAME = "nick_name";
+
+    @Column
+    private String nickname;
+
+    /** 头像路径 */
+    public static final String HEAD_IMG_URL = "head_img_url";
+
+    @Column
+    private String headImgUrl;
     
     
 
@@ -135,6 +149,22 @@ public class SysUserBindingInfo extends CacheVo  implements Serializable
 
 	public void setUserBindingInfoId(Long userBindingInfoId) {
 		this.userBindingInfoId = userBindingInfoId;
+	}
+
+	public String getNickname() {
+		return nickname;
+	}
+
+	public void setNickname(String nickname) {
+		this.nickname = nickname;
+	}
+
+	public String getHeadImgUrl() {
+		return headImgUrl;
+	}
+
+	public void setHeadImgUrl(String headImgUrl) {
+		this.headImgUrl = headImgUrl;
 	}
 
     

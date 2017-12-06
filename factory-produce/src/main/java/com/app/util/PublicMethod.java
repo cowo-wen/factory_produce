@@ -16,8 +16,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Method;
+import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class PublicMethod
 {
@@ -1207,6 +1210,24 @@ public class PublicMethod
             {
             }
         }
+    }
+    
+    public synchronized static OutputStream assemblyHeader(HttpServletRequest request, HttpServletResponse response, String fileName) throws Exception
+    {
+        response.reset();
+        response.setContentType("application/x-msdownload");
+        String agent = request.getHeader("User-Agent");
+        if ((agent != null && agent.indexOf("MSIE") != -1))
+        {
+            fileName = URLEncoder.encode(fileName, StaticBean.CHAR_CODE.utf_8.toString());
+        }
+        else
+        {
+            fileName = new String(fileName.getBytes(StaticBean.CHAR_CODE.utf_8.toString()), StaticBean.CHAR_CODE.iso.toString());
+        }
+
+        response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+        return response.getOutputStream();
     }
 
     /**
