@@ -2,6 +2,7 @@ package com.app.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
@@ -13,14 +14,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import com.xx.util.string.Format;
 
@@ -37,20 +36,45 @@ public class JdbcDao {
 	
 	private boolean autoCommit = true;
 	
+	private Connection conn = null;
+	
 	/**
 	 * 使用事务
 	 * @return
 	 */
 	public TransactionStatus useTransaction(){
-		 DefaultTransactionDefinition def = new DefaultTransactionDefinition();  
-		 def.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);  //隔离级别 = 提交读
-		 def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);  //传播行为 = 必须有事务支持，即如果当前没有事务，就新建一个事务，如果已经存在一个事务中，就加入到这个事务中
-		 if(txManager == null){
-			 txManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
-			 status = txManager.getTransaction(def);
-			 autoCommit = false;
-		 }
+		// DefaultTransactionDefinition def = new DefaultTransactionDefinition();  
+		// def.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);  //隔离级别 = 提交读
+		 //def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);  //传播行为 = 必须有事务支持，即如果当前没有事务，就新建一个事务，如果已经存在一个事务中，就加入到这个事务中
+		// if(txManager == null){
+		//	 txManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
+		//	 status = txManager.getTransaction(def);
+		//	 autoCommit = false;
+		// }
+		 
+		conn = getConnection();
+		try {
+			conn.setAutoCommit(false);
+			conn.setTransactionIsolation(TransactionDefinition.ISOLATION_READ_COMMITTED);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			logger.error("-----------------连接异常",e);
+		}
+		
+		 
 		 return status;
+	}
+	
+	private Connection getConnection(){
+		if(this.conn == null){
+			try {
+				this.conn = jdbcTemplate.getDataSource().getConnection();
+			} catch (SQLException e) {
+				logger.error("-----------------获取连接异常",e);
+			}
+		}
+		return this.conn;
 	}
 	
 	public boolean isAutoCommit() {
@@ -63,11 +87,14 @@ public class JdbcDao {
 	 * 提交事务
 	 * @param status
 	 */
-	public void commit(){
+	public void commit() throws SQLException{
 		if(txManager != null){
 			txManager.commit(status);
 		}
 		
+		if(conn != null){
+			conn.commit();
+		}
 		 
 	}
 	
@@ -75,9 +102,22 @@ public class JdbcDao {
 	 * 回滚事务
 	 * @param status
 	 */
-	public void rollback(){
+	public boolean rollback() {
 		if(txManager != null){
 			txManager.rollback(status);
+		}
+		
+		if(conn != null){
+			try{
+				conn.rollback();
+				return true;
+			}catch(SQLException e){
+				logger.error("回滚事务失败", e);
+				return false;
+			}
+			
+		}else{
+			return true;
 		}
 	}
 	
@@ -109,6 +149,12 @@ public class JdbcDao {
 	}
 	
 	
+	public int update (final String sql) throws SQLException{
+		Statement  st = getConnection().createStatement();
+        return st.executeUpdate(sql);
+
+	}
+	
 	public long insert(final  String sql, final Object [] parem){
 		KeyHolder keyHolder = new GeneratedKeyHolder();  
 		jdbcTemplate.update(new PreparedStatementCreator() {  
@@ -121,6 +167,16 @@ public class JdbcDao {
 		return keyHolder.getKey().longValue();
 	}
 	
+	public long insert(final  String sql) throws SQLException{
+		PreparedStatement ps = getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS); 
+		ps.executeUpdate();
+	    ResultSet rs = ps.getGeneratedKeys(); 
+	    if (rs.next()) {
+	           return rs.getLong(1);
+	    }else{
+	    	return 0;
+	    }
+	}
 	
 
 	public JdbcTemplate getJdbcTemplate() {

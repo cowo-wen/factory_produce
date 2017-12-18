@@ -5,6 +5,7 @@
 package com.app.entity.common;
 
 import java.lang.reflect.Field;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -152,8 +153,9 @@ public class CacheVo implements ApplicationContextAware{
 	/**
 	 * 提交事务
 	 * @param status
+	 * @throws SQLException 
 	 */
-	public void commit(){
+	public void commit() throws SQLException{
 		if(jdbcDao != null){
 			jdbcDao.commit();
 		}
@@ -363,7 +365,7 @@ public class CacheVo implements ApplicationContextAware{
 				
 				if(field.getAnnotation(CustomCache.class) != null){//取自定义缓存key
 					CustomCache cc = field.getAnnotation(CustomCache.class);
-					int[] gorups = cc.gorup();
+					int[] gorups = cc.group();
 					if(gorups != null && gorups.length > 0){
 						for(int i = 0,len = gorups.length;i<len;i++){
 							int gorup = gorups[i];
@@ -698,9 +700,13 @@ public class CacheVo implements ApplicationContextAware{
 			try{
 				String name = "";
 				if(jo.has(name = field.getName())){
-					setValueToVo( field, jo, name);
+					if(!jo.get(name).isJsonNull()){
+						setValueToVo( field, jo, name);
+					}
 				}else if(jo.has(name = map.get(field.getName()))){
-					setValueToVo( field, jo, name);
+					if(!jo.get(name).isJsonNull()){
+						setValueToVo( field, jo, name);
+					}
 				}else{
 					//if(field.getType().equals(Date.class)){
 					//	setFieldValue(field,date);
@@ -1164,7 +1170,7 @@ public class CacheVo implements ApplicationContextAware{
 				}
 			}
 		}
-		return null;
+		return listVO;
 		
 	}
 	
@@ -1343,8 +1349,11 @@ public class CacheVo implements ApplicationContextAware{
 		}
 		sql.append(columnSql).append(" ) VALUES (").append(signSql).append(" )");
 		logger.error("--------------insertSql="+sql.toString());
-		long id = getJdbcDao().insert(sql.toString(), listParam.toArray());
+		//long id = getJdbcDao().insert(sql.toString(), listParam.toArray());
+		long id = getJdbcDao().insert(sql.toString());
 		setPKValue(String.valueOf(id));
+		
+		logger.error("--------------获取主键:"+getIdValue());
 		if(getJdbcDao().isAutoCommit()){
 			insertNosql(1);//保存缓存数据
 		}
@@ -1425,7 +1434,9 @@ public class CacheVo implements ApplicationContextAware{
 		deleteCustomCacheAll();//删除自定义缓存
 		StringBuilder sql = new StringBuilder("delete FROM ").append(getTableName());
 		sql.append(" where ").append(getCustomORM().get(getPKField().getName())).append(" = ").append(getIdValue().toString());
-		int index = getJdbcDao().update(sql.toString(),null);
+		//int index = getJdbcDao().update(sql.toString(),null);
+		logger.error("--------------deleteSQL="+sql.toString());
+		int index = getJdbcDao().update(sql.toString());
 		
 		return index;
 	}
@@ -1442,7 +1453,9 @@ public class CacheVo implements ApplicationContextAware{
         		try {
         			StringBuilder sql = new StringBuilder("DELETE FROM ").append(getTableName());
         			sql.append(" WHERE ").append(getCustomORM().get(getPKField().getName())).append(" = ").append(getIdValue().toString());
-        			getJdbcDao().update(sql.toString(),null);
+        			//getJdbcDao().update(sql.toString(),null);
+        			logger.error("--------------deleteLinkChildSQL="+sql.toString());
+        			getJdbcDao().update(sql.toString());
         			deleteNoSql();
         			deleteCustomCacheAll();//删除自定义缓存
         			return vo.deleteLinkChild(parentName);
@@ -1486,18 +1499,18 @@ public class CacheVo implements ApplicationContextAware{
 		List<Field> listField = getColumnField();
 		int len = listField.size();
 		//Object [] param = new Object[len+1];
-		List<Object> listParam = new ArrayList<Object>();
+		//List<Object> listParam = new ArrayList<Object>();
 		Map<String,String> columnORM =getCustomORM();
 		StringBuilder columnSql = new StringBuilder();
 		boolean bool = false;
 		if(fieldName != null && fieldName.length > 0){
 			List<String> fieldList = Arrays.asList(fieldName);
 			Date date = new Date();
-			listParam.add(date);
+			//listParam.add(date);
 			//if(autoCommit){
-				columnSql.append("operator_time").append(" = ? ");
+				//columnSql.append("operator_time").append(" = ? ");
 			//}else{
-			//	columnSql.append("operator_time").append(" =  ").append(PublicMethod.formatDateStr(date, "'yyyy-MM-dd HH:mm:ss'"));
+				columnSql.append("operator_time").append(" =  '").append(PublicMethod.formatDateStr(date, "yyyy-MM-dd HH:mm:ss")).append("'");
 			//}
 			
 			
@@ -1506,12 +1519,12 @@ public class CacheVo implements ApplicationContextAware{
 				String column = columnORM.get(field.getName());
 				if(fieldList.contains(column) || fieldList.contains(field.getName())){
 					//if(autoCommit){
-						columnSql.append(",").append(column).append(" = ? ");
+						//columnSql.append(",").append(column).append(" = ? ");
 					//}else{
-					//	columnSql.append(",").append(column).append(" =  ").append(getColumnValue(field));
+						columnSql.append(",").append(column).append(" =  ").append(getColumnValue(field));
 					//}
 					
-					listParam.add(getFieldValue(field));
+					//listParam.add(getFieldValue(field));
 				}
 			}
 			sql.append(columnSql);
@@ -1524,20 +1537,20 @@ public class CacheVo implements ApplicationContextAware{
 				}else if(column.equals("operator_time")){
 					Date date = new Date();
 					setFieldValue(field, date);
-					listParam.add(date);
+					//listParam.add(date);
 					if(bool){
 						//if(autoCommit){
-							columnSql.append(",").append(column).append(" = ? ");
+						//	columnSql.append(",").append(column).append(" = ? ");
 						//}else{
-						//	columnSql.append(",").append(column).append(" =  ").append(PublicMethod.formatDateStr(date, "'yyyy-MM-dd HH:mm:ss'"));
+							columnSql.append(",").append(column).append(" =  '").append(PublicMethod.formatDateStr(date, "yyyy-MM-dd HH:mm:ss")).append("'");
 						//}
 						
 					}else{
 						bool = true;
 						//if(autoCommit){
-							columnSql.append(column).append(" = ? ");
+						//	columnSql.append(column).append(" = ? ");
 						//}else{
-						//	columnSql.append(column).append(" =  ").append(PublicMethod.formatDateStr(date, "'yyyy-MM-dd HH:mm:ss'"));
+							columnSql.append(column).append(" =  ").append(PublicMethod.formatDateStr(date, "'yyyy-MM-dd HH:mm:ss'"));
 						//}
 						
 					}
@@ -1545,35 +1558,37 @@ public class CacheVo implements ApplicationContextAware{
 				}else{
 					if(bool){
 						//if(autoCommit){
-							columnSql.append(",").append(column).append(" = ? ");
+						//	columnSql.append(",").append(column).append(" = ? ");
 						//}else{
-						//	columnSql.append(",").append(column).append(" =  ").append(getColumnValue(field));
+							columnSql.append(",").append(column).append(" =  ").append(getColumnValue(field));
 						//}
 						
 					}else{
 						bool = true;
 						//if(autoCommit){
-							columnSql.append(column).append(" = ? ");
+						//	columnSql.append(column).append(" = ? ");
 						//}else{
-						//	columnSql.append(column).append(" =  ").append(getColumnValue(field));
+							columnSql.append(column).append(" =  ").append(getColumnValue(field));
 						//}
 						
 					}
-					listParam.add(getFieldValue(field));
+					//listParam.add(getFieldValue(field));
 					//param[i] = getFieldValue(field);
 				}
 			}
 			sql.append(columnSql);
 		}
 		//if(autoCommit){
-			sql.append( " WHERE ").append(columnORM.get(getPKField().getName())).append(" = ?");
+		//	sql.append( " WHERE ").append(columnORM.get(getPKField().getName())).append(" = ?");
 		//}else{
-		//	sql.append( " WHERE ").append(columnORM.get(getPKField().getName())).append(" = ").append(getFieldValue(getPKField()));
+			sql.append( " WHERE ").append(columnORM.get(getPKField().getName())).append(" = ").append(getFieldValue(getPKField()));
 		//}
 		
 		//param[len] = getFieldValue(getPKField());
-		listParam.add(getFieldValue(getPKField()));
-		int index = getJdbcDao().update(sql.toString(), listParam.toArray());
+		//listParam.add(getFieldValue(getPKField()));
+		//int index = getJdbcDao().update(sql.toString(), listParam.toArray());
+		logger.error("--------------updateSQL="+sql.toString());
+		int index = getJdbcDao().update(sql.toString());
 		if(getJdbcDao().isAutoCommit()){
 			insertNosql(1);//保存缓存数据
 		}else{

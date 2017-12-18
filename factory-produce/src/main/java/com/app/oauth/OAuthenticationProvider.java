@@ -5,8 +5,11 @@
 package com.app.oauth;
 
 import java.util.Collection;
+import java.util.List;
 
 import javax.servlet.http.HttpSession;
+
+import me.chanjar.weixin.mp.bean.result.WxMpOAuth2AccessToken;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,8 +23,12 @@ import org.springframework.stereotype.Component;
 
 import com.app.bean.SysUserDetails;
 import com.app.config.CustomWebAuthenticationDetails;
+import com.app.dao.JdbcDao;
+import com.app.entity.sys.SysUserBindingInfo;
+import com.app.entity.sys.SysUserEntity;
 import com.app.exception.LoginAccountStatusException;
 import com.app.service.sys.SysUserDetailsService;
+import com.app.service.wechat.WeiXinServer;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
 import com.xx.util.string.MD5;
@@ -44,41 +51,76 @@ public class OAuthenticationProvider implements AuthenticationProvider {
      */
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         CustomWebAuthenticationDetails details = (CustomWebAuthenticationDetails) authentication.getDetails();
-        String token = details.getToken();
-        if(PublicMethod.isEmptyStr(token)){
-        	throw new LoginAccountStatusException("验证码不能为空");
+        
+        if(!PublicMethod.isEmptyStr(details.getCode())){//微信登录认证逻辑
+        	JdbcDao jdbcDao = null;
+        	SysUserEntity sysUserEntity = new SysUserEntity(jdbcDao);
+			try {
+				WxMpOAuth2AccessToken token = WeiXinServer.getWeChatWxMpService().oauth2getAccessToken(details.getCode());
+				SysUserBindingInfo userBind = new SysUserBindingInfo(null);
+	        	List<SysUserBindingInfo> list = userBind.setType(1).setOpenId(token.getOpenId()).queryCustomCacheValue(0);
+				//List<SysUserBindingInfo> list = userBind.setType(1).setOpenId("oBt_pwwNntoknyvswR1wNSJuWM-0").queryCustomCacheValue(0);
+	        	if(list != null && list.size() > 0){
+	        		sysUserEntity.setUserId(list.get(0).getUserId()).loadVo();
+	        	}else{
+	        		throw new LoginAccountStatusException("不存在的用户");
+	        		
+	        	}
+			} catch (Exception e) {
+				 throw new LoginAccountStatusException(e.getMessage());
+			}
+        	SysUserDetails user = (SysUserDetails) userService.loadUserByUsername(sysUserEntity.getLoginName());
+        	String password =new String(user.getPassword());
+        	
+        	if(user == null || user.getUserId() == null || user.getUserId() == 0){
+                throw new LoginAccountStatusException("不存在的用户名");
+            }else{
+            	user.setPassword(MD5.encode(user.getPassword()));
+            }
+            Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
+            if(user.getType() != 1 && (authorities == null || authorities.size() == 0)){
+            	throw new LoginAccountStatusException("用户未分配角色权限，不能登录");
+            }
+        	return new UsernamePasswordAuthenticationToken(user, password, authorities);
+        }else{//pc登录逻辑
+        	 String token = details.getToken();
+             if(PublicMethod.isEmptyStr(token)){
+             	throw new LoginAccountStatusException("验证码不能为空");
+             }
+             String checkToken = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("identifyingcode:login:"+session.getId());
+             if(PublicMethod.isEmptyStr(checkToken)){
+             	throw new LoginAccountStatusException("验证码已失效");
+             }
+             if(!token.equals(checkToken)){
+             	throw new LoginAccountStatusException("验证码不正确");
+             }
+             String username = authentication.getName();
+             if(PublicMethod.isEmptyStr(username)){
+             	throw new LoginAccountStatusException("用户名不能为空");
+             }
+             String password = (String) authentication.getCredentials();
+             if(PublicMethod.isEmptyStr(password)){
+             	throw new LoginAccountStatusException("密码不能为空");
+             }
+             SysUserDetails user = (SysUserDetails) userService.loadUserByUsername(username);
+             if(user == null || user.getUserId() == null || user.getUserId() == 0){
+                 throw new LoginAccountStatusException("不存在的用户名");
+             }
+             //加密过程在这里体现
+             if (!MD5.encode(password).equals(user.getPassword())) {
+                 throw new LoginAccountStatusException("密码不正确");
+             }
+             if(user.getValid() == null || user.getValid() != 1){
+             	throw new LoginAccountStatusException("用户已被锁，请联系管理员");
+             }
+             Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
+             if(user.getType() != 1 && (authorities == null || authorities.size() == 0)){
+             	throw new LoginAccountStatusException("用户未分配角色权限，不能登录");
+             }
+             return new UsernamePasswordAuthenticationToken(user, password, authorities);
         }
-        String checkToken = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("identifyingcode:login:"+session.getId());
-        if(PublicMethod.isEmptyStr(checkToken)){
-        	throw new LoginAccountStatusException("验证码已失效");
-        }
-        if(!token.equals(checkToken)){
-        	throw new LoginAccountStatusException("验证码不正确");
-        }
-        String username = authentication.getName();
-        if(PublicMethod.isEmptyStr(username)){
-        	throw new LoginAccountStatusException("用户名不能为空");
-        }
-        String password = (String) authentication.getCredentials();
-        if(PublicMethod.isEmptyStr(password)){
-        	throw new LoginAccountStatusException("密码不能为空");
-        }
-        SysUserDetails user = (SysUserDetails) userService.loadUserByUsername(username);
-        if(user == null || user.getUserId() == null || user.getUserId() == 0){
-            throw new LoginAccountStatusException("不存在的用户名");
-        }
-        //加密过程在这里体现
-        if (!MD5.encode(password).equals(user.getPassword())) {
-            throw new LoginAccountStatusException("密码不正确");
-        }
-        if(user.getValid() == null || user.getValid() != 1){
-        	throw new LoginAccountStatusException("用户已被锁，请联系管理员");
-        }
-        Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
-        if(user.getType() != 1 && (authorities == null || authorities.size() == 0)){
-        	throw new LoginAccountStatusException("用户未分配角色权限，不能登录");
-        }
-        return new UsernamePasswordAuthenticationToken(user, password, authorities);
+        
+       
     }
 
     public boolean supports(Class<?> arg0) {

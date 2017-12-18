@@ -106,20 +106,13 @@ public class CustomCacheBean {
 
 	public String toString(CacheVo vo){
 		this.vo = vo;
-		if(field == null){
-			int len = map.size();
-			field = new ArrayList<Field>();
-			for(int i = 0;i<len;i++){
-				field.add(map.get(i));
-			}
-		}
+		field = getField();
 		StringBuilder sb = new StringBuilder();
 		Object tableName = vo.getTableName();//获取表名
 		sb.append(tableName).append(":").append("custom");
 		for(Field f : field){
 			sb.append(":").append(f.getName()).append(":").append(getFieldValue(f));
 		}
-		logger.error("---------------:"+sb.toString());
 		return sb.toString();
 	}
 	

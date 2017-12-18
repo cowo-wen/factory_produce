@@ -41,7 +41,7 @@ public class SysConfigProperties
 	}
 
 	
-
+	//微信开发者id：wx7104f006a0fdf33b  Token：abc123321cba  EncodingAESKey：2cqD7qGAjhKUXrtdn6BoRLg3WzJ19bOJzi6TN80msVA
 	
 	
     

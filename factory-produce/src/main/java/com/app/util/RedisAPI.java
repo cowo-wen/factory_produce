@@ -258,6 +258,19 @@ public class RedisAPI
     }
 
     /**
+     * 存放数据 有效时间十分钟
+     * 
+     * @param key  key
+     * @param value 值
+     * @return
+     */
+
+    public void putTenMinutes(String key, String value)
+    {
+        put(key, value, 600);
+    }
+    
+    /**
      * 存放数据 有效时间2小时
      * 
      * @param key  key
@@ -862,35 +875,15 @@ public class RedisAPI
         return 0;
     }
 
-    public void hSet(String key, String[] fileds, String[] values)
+    
+    public void hSet(String key, String filed, String value)
     {
         
         Jedis jedis = null;
         try
         {
-            int length = 0;
-            if (fileds != null && (length = fileds.length) > 0)
-            {
-                
-                jedis = getJedis();
-                if (values == null)
-                    values = new String[length];
-
-                if (values.length != length)
-                {
-                    String[] valuesNew = new String[length];
-                    for (int i = 0; i < values.length; i++)
-                    {
-                        valuesNew[i] = values[i];
-                    }
-                    values = valuesNew;
-                }
-                for (int i = 0; i < length; i++)
-                {
-                    jedis.hset(key, fileds[i], PublicMethod.isEmptyStr(values[i]) ? "" : values[i]);
-                }
-            }
-
+        	jedis = getJedis();
+        	jedis.hset(key, filed, PublicMethod.isEmptyStr(value) ? "" : value);
         }
         catch (Exception e)
         {
@@ -904,6 +897,36 @@ public class RedisAPI
             // 返还到连接池
             returnResource(pool, jedis,1);
         }
+    }
+    
+    public void hSet(String key, String[] fileds, String[] values)
+    {
+        
+        
+        int length = 0;
+        if (fileds != null && (length = fileds.length) > 0)
+        {
+            
+            if (values == null)
+                values = new String[length];
+
+            if (values.length != length)
+            {
+                String[] valuesNew = new String[length];
+                for (int i = 0; i < values.length; i++)
+                {
+                    valuesNew[i] = values[i];
+                }
+                values = valuesNew;
+            }
+            for (int i = 0; i < length; i++)
+            {
+            	hSet(key, fileds[i], values[i]);
+                //jedis.hset(key, fileds[i], PublicMethod.isEmptyStr(values[i]) ? "" : values[i]);
+            }
+        }
+
+       
     }
     
     /**

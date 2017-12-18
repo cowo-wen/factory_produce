@@ -164,6 +164,7 @@ public class SanctionAPI extends Result{
      */
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/check")
     public String check(@RequestParam String aoData) {
+    	logger.error("--------jdbcDao->"+jdbcDao);
     	EventSanctionEntity entity = new EventSanctionEntity(jdbcDao);
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
     	if(jo.has(EventSanctionEntity.EVENT_SANCTION_ID)){
@@ -199,6 +200,7 @@ public class SanctionAPI extends Result{
     @RequestMapping(method={ RequestMethod.POST, RequestMethod.PUT },value="/update")
     public String update(@RequestParam String aoData) {
     	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
+    	logger.error("-----------");
     	try{
     		EventSanctionEntity entity = new EventSanctionEntity(jdbcDao);
     		if(jo.has(EventSanctionEntity.EVENT_SANCTION_ID) && jo.get(EventSanctionEntity.EVENT_SANCTION_ID).getAsLong() > 0){

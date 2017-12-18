@@ -14,7 +14,7 @@ public @interface CustomCache {
 	 * 自定义缓存组
 	 * @return
 	 */
-	public abstract int [] gorup() default {0};
+	public abstract int [] group() default {0};
 	
 	/**
 	 * 排列顺序

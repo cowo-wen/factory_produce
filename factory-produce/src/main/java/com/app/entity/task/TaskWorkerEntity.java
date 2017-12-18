@@ -57,7 +57,8 @@ public class TaskWorkerEntity extends CacheVo  implements Serializable
     
     @Column
     private Integer valid;
-    
+
+    public static final String NUMBER = "number";
     @Column
     private Integer number;
     

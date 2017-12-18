@@ -1,5 +1,6 @@
 package com.app.controller.common;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -117,7 +118,21 @@ public class Result {
 	    	map.put("data", obj);
 	    	map.put("id", "成功");
 		}
-		jdbcDao.commit();
+		if(jdbcDao != null){
+			try {
+				jdbcDao.commit();
+			} catch (SQLException e) {
+				boolean bool = jdbcDao.rollback();
+				map.put("status", 500);
+				if(bool){
+					map.put("message", "提交事务失败:"+e.getMessage());
+				}else{
+					map.put("message", "提交事务失败,并且数据回滚失败:"+e.getMessage());
+				}
+		    	
+			}
+		}
+		
 		return gson.toJson(map);
 	}
 	
@@ -128,7 +143,22 @@ public class Result {
     	map.put("status", 200);
     	map.put("message", message);
     	map.put("id", id);
-    	jdbcDao.commit();
+    	logger.error("--------------jdbcDao:"+jdbcDao);
+    	if(jdbcDao != null){
+    		logger.error("--------------提交事务");
+			try {
+				jdbcDao.commit();
+			} catch (SQLException e) {
+				boolean bool = jdbcDao.rollback();
+				map.put("status", 500);
+				if(bool){
+					map.put("message", "提交事务失败:"+e.getMessage());
+				}else{
+					map.put("message", "提交事务失败,并且数据回滚失败:"+e.getMessage());
+				}
+		    	
+			}
+		}
     	return gson.toJson(map);
     	//return new GsonBuilder().serializeNulls().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
 	}
@@ -137,7 +167,10 @@ public class Result {
 		Map<String,Object> map = new HashMap<String,Object>();
     	map.put("status", 500);
     	map.put("message", message);
-    	jdbcDao.rollback();
+    	if(jdbcDao != null){
+    		jdbcDao.rollback();
+		}
+    	
     	return gson.toJson(map);
     	//return new GsonBuilder().serializeNulls().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setDateFormat("yyyy-MM-dd HH:mm:ss").create().toJson(map);
 	}

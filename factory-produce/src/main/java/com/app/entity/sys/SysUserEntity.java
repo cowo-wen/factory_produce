@@ -87,7 +87,7 @@ public class SysUserEntity extends CacheVo  implements Serializable
 
     public static final String NUMBER = "number";
     @Column
-    @CustomCache(sort = 0,gorup=1)
+    @CustomCache(sort = 0,group=1)
     private String number;
 
     public static final String IDCARD = "idcard";
@@ -140,8 +140,9 @@ public class SysUserEntity extends CacheVo  implements Serializable
 		return type;
 	}
 
-	public void setType(Integer type) {
+	public SysUserEntity setType(Integer type) {
 		this.type = type;
+		return this;
 	}
 
 	public Long getUserId() {
@@ -157,71 +158,80 @@ public class SysUserEntity extends CacheVo  implements Serializable
 		return userName;
 	}
 
-	public void setUserName(String userName) {
+	public SysUserEntity setUserName(String userName) {
 		this.userName = userName;
+		return this;
 	}
 
 	public String getPassword() {
 		return password;
 	}
 
-	public void setPassword(String password) {
+	public SysUserEntity setPassword(String password) {
 		this.password = password;
+		return this;
 	}
 
 	public String getLoginName() {
 		return loginName;
 	}
 
-	public void setLoginName(String loginName) {
+	public SysUserEntity setLoginName(String loginName) {
 		this.loginName = loginName;
+		return this;
 	}
 
 	public Date getCreateTime() {
 		return createTime;
 	}
-	public void setCreateTime(Date createTime) {
+	public SysUserEntity setCreateTime(Date createTime) {
 		this.createTime = createTime;
+		return this;
 	}
 
 	public Date getOperatorTime() {
 		return operatorTime;
 	}
 
-	public void setOperatorTime(Date operatorTime) {
+	public SysUserEntity setOperatorTime(Date operatorTime) {
 		this.operatorTime = operatorTime;
+		return this;
 	}
 
 	public String getMobile() {
 		return mobile;
 	}
 
-	public void setMobile(String mobile) {
+	public SysUserEntity setMobile(String mobile) {
 		this.mobile = mobile;
+		return this;
 	}
 
 	public String getNumber() {
 		return number;
 	}
 
-	public void setNumber(String number) {
+	public SysUserEntity setNumber(String number) {
 		this.number = number;
+		return this;
 	}
 
 	public String getIdcard() {
 		return idcard;
 	}
 
-	public void setIdcard(String idcard) {
+	public SysUserEntity setIdcard(String idcard) {
 		this.idcard = idcard;
+		return this;
 	}
 
 	public Integer getValid() {
 		return valid;
 	}
 
-	public void setValid(Integer valid) {
+	public SysUserEntity setValid(Integer valid) {
 		this.valid = valid;
+		return this;
 	}
 
 	public String getRole() {
@@ -244,8 +254,9 @@ public class SysUserEntity extends CacheVo  implements Serializable
 		return this.role;
 	}
 
-	public void setRole(String role) {
+	public SysUserEntity setRole(String role) {
 		this.role =role;
+		return this;
 	}
 
     

@@ -36,7 +36,13 @@ public class LoginSuccessHandler extends  SavedRequestAwareAuthenticationSuccess
         //sysLogEntity.setApplicationId(1L);
         sysLogEntity.setIp(getIpAddress(request));
         sysLogEntity.setType(SysLogEntity.TYPE_SUCCESS);
-        sysLogEntity.setMessage(userDetails.getUserName()+"于"+PublicMethod.formatDateStr("yyyy-MM-dd HH:mm:ss") + " 登录成功");
+        if(PublicMethod.isEmptyStr(request.getParameter("code"))){
+        	sysLogEntity.setMessage(userDetails.getUserName()+"于"+PublicMethod.formatDateStr("yyyy-MM-dd HH:mm:ss") + " 登录成功");
+            
+        }else{
+        	sysLogEntity.setMessage(userDetails.getUserName()+"于"+PublicMethod.formatDateStr("yyyy-MM-dd HH:mm:ss") + " 微信登录成功");
+            
+        }
         try {
 			sysLogEntity.insert();
 		} catch (Exception e) {

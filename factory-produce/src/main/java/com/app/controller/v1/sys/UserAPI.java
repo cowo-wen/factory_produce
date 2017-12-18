@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.app.controller.common.Result;
 import com.app.dao.sql.SQLWhere;
 import com.app.dao.sql.cnd.LikeCnd;
+import com.app.dao.sql.cnd.NotEQCnd;
 import com.app.dao.sql.sort.DescSort;
 import com.app.entity.sys.SysUserEntity;
 import com.app.entity.sys.SysUserRoleEntity;
@@ -44,7 +45,7 @@ public class UserAPI extends Result{
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
     public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
-    	SQLWhere sql = new SQLWhere().orderBy(new DescSort(SysUserEntity.USER_ID));
+    	SQLWhere sql = new SQLWhere(new NotEQCnd(SysUserEntity.TYPE, SysUserEntity.USER_ADMIN)).orderBy(new DescSort(SysUserEntity.USER_ID));
     	int iDisplayStart = 0;// 起始  
     	int iDisplayLength = 10;// size 
     	int sEcho = 0;

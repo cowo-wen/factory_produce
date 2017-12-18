@@ -13,11 +13,14 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
+import com.app.util.PublicMethod;
+import com.google.gson.annotations.Expose;
 
 /**
  * 功能说明：微信绑定信息
@@ -55,26 +58,26 @@ public class SysUserBindingInfo extends CacheVo  implements Serializable
     /** 微信身份唯一码 */
     public static final String OPEN_ID = "open_id";
 
-    @CustomCache(sort = {0,2},gorup={0,1},hashKey={false,true})
+    @CustomCache(sort = {0,2},group={0,1},hashKey={false,true})
     @Column
     private String openId;
 
-    @CustomCache(sort = {2,0},gorup={0,1},hashKey={true,false})
+    
     /** 数据id 绑定的学生id*/
     public static final String USER_ID = "user_id";
-
     @Column
+    @CustomCache(sort = {2,0},group={0,1},hashKey={true,false})
     private Long userId;
     
     /** 1为微信*/
     public static final String TYPE = "type";
-    @CustomCache(sort = 1,gorup={0,1})
+    @CustomCache(sort = 1,group={0,1})
     @Column
     private Integer type;
     
     
     /**昵称 */
-    public static final String NICKNAME = "nick_name";
+    public static final String NICKNAME = "nickname";
 
     @Column
     private String nickname;
@@ -94,6 +97,14 @@ public class SysUserBindingInfo extends CacheVo  implements Serializable
     private Date operatorTime;
     
     
+    /**
+     * 注解@Transient 不需要持久化到数据库的字段
+     */
+    /** 头像路径 */
+    public static final String USER_NAME = "user_name";
+    @Transient
+    @Expose(deserialize = true)
+    private String userName;
     
 
     public Long getUserBindingInfoId()
@@ -101,70 +112,91 @@ public class SysUserBindingInfo extends CacheVo  implements Serializable
         return userBindingInfoId;
     }
 
-    public SysUserBindingInfo setUserBindingInfoId(long userBindingInfoId)
-    {
-        this.userBindingInfoId = userBindingInfoId;
-        return this;
-    }
+    
 
 	public String getOpenId() {
 		return openId;
 	}
 
-	public void setOpenId(String openId) {
+	public SysUserBindingInfo setOpenId(String openId) {
 		this.openId = openId;
+		return this;
 	}
 
 	public Long getUserId() {
 		return userId;
 	}
 
-	public void setUserId(Long userId) {
+	public SysUserBindingInfo setUserId(Long userId) {
 		this.userId = userId;
+		return this;
 	}
 
 	public Integer getType() {
 		return type;
 	}
 
-	public void setType(Integer type) {
+	public SysUserBindingInfo setType(Integer type) {
 		this.type = type;
+		return this;
 	}
 
 	public Date getCreateTime() {
 		return createTime;
 	}
 
-	public void setCreateTime(Date createTime) {
+	public SysUserBindingInfo setCreateTime(Date createTime) {
 		this.createTime = createTime;
+		return this;
 	}
 
 	public Date getOperatorTime() {
 		return operatorTime;
 	}
 
-	public void setOperatorTime(Date operatorTime) {
+	public SysUserBindingInfo setOperatorTime(Date operatorTime) {
 		this.operatorTime = operatorTime;
+		return this;
 	}
 
-	public void setUserBindingInfoId(Long userBindingInfoId) {
+	public SysUserBindingInfo setUserBindingInfoId(Long userBindingInfoId) {
 		this.userBindingInfoId = userBindingInfoId;
+		return this;
 	}
 
 	public String getNickname() {
 		return nickname;
 	}
 
-	public void setNickname(String nickname) {
+	public SysUserBindingInfo setNickname(String nickname) {
 		this.nickname = nickname;
+		return this;
 	}
 
 	public String getHeadImgUrl() {
 		return headImgUrl;
 	}
 
-	public void setHeadImgUrl(String headImgUrl) {
+	public SysUserBindingInfo setHeadImgUrl(String headImgUrl) {
 		this.headImgUrl = headImgUrl;
+		return this;
+	}
+
+
+
+	public String getUserName() {
+		if(!PublicMethod.isEmptyStr(userId)){
+			SysUserEntity user = new SysUserEntity(jdbcDao);
+			user.setUserId(this.userId).loadVo();
+			userName = user.getUserName();
+		}
+		return userName;
+	}
+
+
+
+	public void setUserName(String userName) {
+		this.userName = userName;
 	}
 
     

@@ -5,6 +5,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -21,8 +22,9 @@ import com.xx.util.img.VerifyCode.Img;
  */
 @RestController
 @RequestMapping("/OAuth/identifyingcode")
-public class IdentifyingCodeRest {
-    public static Log logger = LogFactory.getLog(IdentifyingCodeRest.class);
+@Scope("prototype")
+public class IdentifyingCodeAPI {
+    public static Log logger = LogFactory.getLog(IdentifyingCodeAPI.class);
     
   
     @Autowired  

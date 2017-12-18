@@ -54,7 +54,7 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Comparable<Re
 	 */
 	public static final String GOODS_BATCH_CODE = "goods_batch_code";
     @Column
-    @CustomCache(sort = 0,hashKey={true,false},gorup={0,1})
+    @CustomCache(sort = 0,hashKey={true,false},group={0,1})
     private String goodsBatchCode;
     
    
@@ -72,7 +72,7 @@ public class RepertoryGoodsBatchEntity extends CacheVo  implements Comparable<Re
      */
     public static final String VALID = "valid";
     @Column
-    @CustomCache(sort = 1,gorup={0,1})
+    @CustomCache(sort = 1,group={0,1})
     private Integer valid;
     
     /**

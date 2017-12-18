@@ -685,7 +685,7 @@ public class ProduceAPI extends Result{
 	    	//jo.addProperty("end_time", jo.get("end_time").getAsString()+" 23:59:59");
 	    	entity.parse(jo);
 	    	
-	    	if(entity.getStatus() != TaskProduceEntity.PRODUC_STATUS_PREP){
+	    	if(entity.getStatus() != TaskProduceEntity.PRODUC_STATUS_PREP && entity.getStatus() != TaskProduceEntity.PRODUC_STATUS_REFUSE){
 	    		return error("任务已进行生产，不能修改");
 	    	}
 	    	
@@ -710,8 +710,10 @@ public class ProduceAPI extends Result{
 	    	}
 	    	
 	    	List<TaskWorkerEntity> list = new TaskWorkerEntity(jdbcDao).setProduceId(entity.getProduceId()).queryCustomCacheValue(0);
+	    	
+	    	Map<Long,TaskWorkerEntity> map = new HashMap<Long,TaskWorkerEntity>();
 	    	for(TaskWorkerEntity worker : list){
-	    		worker.delete();
+	    		map.put(worker.getUserId(), worker);
 	    	}
 	    	if(jo.has("worker_list") && !jo.get("worker_list").isJsonNull()){
 	    		JsonArray ja = jo.get("worker_list").getAsJsonArray();
@@ -724,7 +726,15 @@ public class ProduceAPI extends Result{
 	    				worker.setUserId(object.get("user_id").getAsLong());
 	    				worker.setValid(StaticBean.YES);
 	    				worker.setNumber(object.get("value").getAsInt());
-	    				worker.insert();
+	    				if(map.containsKey(worker.getUserId())){
+	    					if(map.get(worker.getUserId()).getNumber() != worker.getNumber()){
+	    						map.get(worker.getUserId()).setNumber(worker.getNumber()).update(TaskWorkerEntity.NUMBER);
+	    					}
+	    					map.remove(worker.getUserId());
+	    				}else{
+	    					worker.insert();
+	    				}
+	    				
 	    				current += worker.getNumber();
 	    			}
 	    			if(current != entity.getAmount()){
@@ -733,12 +743,14 @@ public class ProduceAPI extends Result{
 	    		}else{
 	    			return error("未选择生产工人");
 	    		}
-	    		
 	    	}else{
 	    		return error("工人不能为空");
 	    	}
-	    	
-    	
+	    	if(map.size() > 0){
+	    		for(Map.Entry<Long, TaskWorkerEntity> kv : map.entrySet()){
+	    			kv.getValue().delete();
+	    		}
+	    	}
     		entity.update();
         	return success("修改成功",entity.getGoodsId());
     	}catch(Exception e){

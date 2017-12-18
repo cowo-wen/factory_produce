@@ -70,13 +70,15 @@ public class PermissionInterceptor implements HandlerInterceptor
                         response.setContentType("text/html;charset=utf-8");
                         response.getWriter().print("参数不全");
             		}else{
-            			String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:"+request.getSession().getId()+":application_code:"+applicationCode);
+            			//String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:"+request.getSession().getId()+":application_code:"+applicationCode);
+            			String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).hget("temp:"+request.getSession().getId()+":application_code", applicationCode,2);
             			if(PublicMethod.isEmptyStr(url)){
             				request.setCharacterEncoding("UTF-8");
                             response.setContentType("text/html;charset=utf-8");
                             response.getWriter().print("没有权限操作!");
             			}else{
             				boolean bool = checkURL(request.getRequestURI(),url);
+            				logger.error("----------------验证权限:"+bool);
             				if(bool){
             					return true;
             				}else{
