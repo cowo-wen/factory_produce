@@ -14,6 +14,16 @@ public class StaticBean
 	
 	public static final int WAIT = 3;
 	
+	/**
+	 * 等待发送微信数据的消息容器地址
+	 */
+	public static final String WEIXIN_MESSAGE_WAIT_SEND_LIST = "weixin:message:list:wait_send";
+	
+	/**
+	 * 生产任务消息推送到工人
+	 */
+	public static final String WEIXIN_MESSAGE_TYPE_TASK_PRODUCE_MESSAGE = "com.app.service.wechat.message.WxMessageOperatorTaskProduceImp";
+	
     /**
      * 
      * 

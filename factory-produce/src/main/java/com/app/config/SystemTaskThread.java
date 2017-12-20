@@ -7,6 +7,7 @@ package com.app.config;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.app.timing_task.WeiXinMessageSendTask;
 import com.app.timing_task.WorkerAchievementCountTask;
 
 /**
@@ -37,6 +38,7 @@ public class SystemTaskThread implements Runnable
 		        {
 		            
 		        	WorkerAchievementCountTask.startThread();
+		        	WeiXinMessageSendTask.startThread();
 		        	
 		        }
 		        catch (Exception e)

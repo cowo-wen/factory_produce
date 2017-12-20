@@ -52,7 +52,8 @@ public class LoginInterceptor implements HandlerInterceptor
         //logger.error("preHandle-----权限拦截-------拦截器获取:" + request.getSession().getId());
     	String url = request.getRequestURI();
     	if(!url.equals("/v1/sys/loginuser/logininfo")){
-    		String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:"+request.getSession().getId()+":userinfo");
+    		
+    		String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:userinfo:login:"+request.getSession().getId());
             if(PublicMethod.isEmptyStr(value)){
             	request.setCharacterEncoding("UTF-8");
                 response.setContentType("text/html;charset=utf-8");

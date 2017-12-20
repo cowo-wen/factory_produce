@@ -513,7 +513,7 @@ public class ProduceAPI extends Result{
     		if(jo.has(TaskReviewEntity.REMARK)){
     			review.setRemark(jo.get(TaskReviewEntity.REMARK).getAsString());//设置备注
     		}
-    		if(entity.getStatus() == TaskProduceEntity.PRODUC_STATUS_FINISH){//处理完成
+    		if(entity.getStatus() == TaskProduceEntity.PRODUC_STATUS_FINISH && entity.getProduceType() == 1){//处理完成
     			review.setNumber(0);//该处地方需要提交入库逻辑
     			RepertoryGoodsBillEntity goodsBill = new RepertoryGoodsBillEntity(jdbcDao);
     			goodsBill.setType(RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_PRODUCE);
@@ -581,23 +581,26 @@ public class ProduceAPI extends Result{
     			return error("任务未开始,不能领料");
     		}
     		List<TaskLockComponentEntity> list = getMaterialProduceData(id);
-    		RepertoryGoodsBillEntity goodsBill = new RepertoryGoodsBillEntity(jdbcDao);
-    		goodsBill.setProduceId(id);
-    		goodsBill.setType(RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_APPLY);
-    		goodsBill.setGoodsBatchCode(entity.getGoodsBatchCode());
-    		goodsBill.setCheckStatus(StaticBean.WAIT);
-    		goodsBill.setLiableUser(userId);
-    		goodsBill.setTitle(entity.getProduceName());
-    		Long billId = goodsBill.insert();
-    		for(TaskLockComponentEntity component : list){
-    			RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(jdbcDao);
-    			detail.setGoodsBillId(billId);
-    			detail.setGoodsBatchId(component.getGoodsBatchId());
-    			detail.setGoodsId(component.getGoodsId());
-    			detail.setNumber(component.getNumber());
-    			detail.setLockComponentId(component.getLockComponentId());
-    			detail.applyInsert();
+    		if(list != null && list.size() > 0){
+    			RepertoryGoodsBillEntity goodsBill = new RepertoryGoodsBillEntity(jdbcDao);
+        		goodsBill.setProduceId(id);
+        		goodsBill.setType(RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_APPLY);
+        		goodsBill.setGoodsBatchCode(entity.getGoodsBatchCode());
+        		goodsBill.setCheckStatus(StaticBean.WAIT);
+        		goodsBill.setLiableUser(userId);
+        		goodsBill.setTitle(entity.getProduceName());
+        		Long billId = goodsBill.insert();
+        		for(TaskLockComponentEntity component : list){
+        			RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(jdbcDao);
+        			detail.setGoodsBillId(billId);
+        			detail.setGoodsBatchId(component.getGoodsBatchId());
+        			detail.setGoodsId(component.getGoodsId());
+        			detail.setNumber(component.getNumber());
+        			detail.setLockComponentId(component.getLockComponentId());
+        			detail.applyInsert();
+        		}
     		}
+    		
     		entity.setStatus(TaskProduceEntity.PRODUC_STATUS_WORKING);//更新状态正在进行
     		entity.setStartTime(new Date());
     		entity.update(TaskProduceEntity.STATUS,TaskProduceEntity.START_TIME);
@@ -778,10 +781,16 @@ public class ProduceAPI extends Result{
     	if(PublicMethod.isEmptyStr(entity.getGoodsBatchCode())){
     		return error("批次号不能为空");
     	}
-    	
-    	if(PublicMethod.isEmptyValue(entity.getGoodsId())){
-    		return error("产品不能为空");
+    	if(entity.getProduceType() == 1){
+    		if(PublicMethod.isEmptyValue(entity.getGoodsId())){
+        		return error("产品不能为空");
+        	}
+    	}else if(entity.getProduceType() == 2){
+    		entity.setGoodsId(0L);
+    	}else{
+    		return error("未知的任务类型");
     	}
+    	
     	
     	if(PublicMethod.isEmptyValue(entity.getBeginTime(),entity.getEndTime())){
     		return error("开始日期与结束日期不能为空");
@@ -805,7 +814,7 @@ public class ProduceAPI extends Result{
     			return error("请选择生产工人");
     		}
     		entity.setStatus(TaskProduceEntity.PRODUC_STATUS_PREP);
-    		
+    		entity.setOperatorUserId(getLoginUser().getUserId());
     		entity.insert();
         	return success("新增成功",entity.getGoodsId());
     	}catch(Exception e){

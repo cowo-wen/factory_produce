@@ -37,6 +37,8 @@ public class SysUserBindingInfo extends CacheVo  implements Serializable
 	 * 
 	 */
 	private static final long serialVersionUID = 8473793266800448594L;
+	
+	public static final int BINDING_TYPE_WEIXIN = 1;
 
 
 

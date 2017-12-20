@@ -53,7 +53,7 @@ public class PermissionInterceptor implements HandlerInterceptor
     	
     	long time = System.currentTimeMillis();
         try{
-        	String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:"+request.getSession().getId()+":userinfo");
+        	String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:userinfo:login:"+request.getSession().getId());
             if(PublicMethod.isEmptyStr(value)){
             	request.setCharacterEncoding("UTF-8");
                 response.setContentType("text/html;charset=utf-8");
@@ -61,7 +61,7 @@ public class PermissionInterceptor implements HandlerInterceptor
             }else{
             	JsonObject jsonObject= new JsonParser().parse(value).getAsJsonObject();
             	String applicationCode = request.getParameter("application_code");
-            	logger.error("---------applicationCode="+applicationCode);
+            	//logger.error("---------applicationCode="+applicationCode);
             	if(jsonObject.get("login_name").getAsString().equals("admin")){
             		return true;
             	}else{
@@ -70,8 +70,7 @@ public class PermissionInterceptor implements HandlerInterceptor
                         response.setContentType("text/html;charset=utf-8");
                         response.getWriter().print("参数不全");
             		}else{
-            			//String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:"+request.getSession().getId()+":application_code:"+applicationCode);
-            			String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).hget("temp:"+request.getSession().getId()+":application_code", applicationCode,2);
+            			String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).hget("temp:permission:application_code:"+request.getSession().getId(), applicationCode,2);
             			if(PublicMethod.isEmptyStr(url)){
             				request.setCharacterEncoding("UTF-8");
                             response.setContentType("text/html;charset=utf-8");

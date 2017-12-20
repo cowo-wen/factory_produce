@@ -2,8 +2,10 @@ package com.app.controller.v1.sys;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -24,6 +26,7 @@ import com.app.entity.sys.SysRoleApplicationEntity;
 import com.app.entity.sys.SysRoleEntity;
 import com.app.entity.sys.SysUserEntity;
 import com.app.util.PublicMethod;
+import com.app.util.RedisAPI;
 import com.app.util.StaticBean;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -164,6 +167,13 @@ public class RoleApplicationAPI extends Result{
 	    		roleApp.setRoleId(roleId);
 	    		roleApp.setApplicationId(appId);
 	    		roleApp.insert();
+	    	}
+	    	RedisAPI redisAPI = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
+	    	Set<String> set =redisAPI.keys("temp:userinfo:login:");
+	    	Iterator<String> iterator = set.iterator();
+	    	while(iterator.hasNext()){
+	    		String key = redisAPI.get(iterator.next());
+	    		redisAPI.del(key);
 	    	}
 	    	return success("分配成功");
     	}catch(Exception e){

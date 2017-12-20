@@ -186,10 +186,11 @@ public class WorkerAchievementCountTask implements Runnable
      * 
      * @author chenwen 2015-1-22
      */
-    public static void startThread()
+    public synchronized static void startThread()
     {
         if (!isRun)
         {
+        	isRun = true;
             new Thread(new WorkerAchievementCountTask()).start();
         }
     }
