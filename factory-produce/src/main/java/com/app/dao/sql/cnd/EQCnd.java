@@ -4,6 +4,11 @@ package com.app.dao.sql.cnd;
 
 public class EQCnd  extends Cnd{
 
+	/**
+	 * 等于条件
+	 * @param name 字段名称
+	 * @param object 字段值
+	 */
 	public EQCnd(String name, Object object) {
 		super(name, object);
 	}

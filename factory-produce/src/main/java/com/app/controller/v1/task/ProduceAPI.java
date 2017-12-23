@@ -24,6 +24,7 @@ import com.app.dao.sql.cnd.EQCnd;
 import com.app.dao.sql.cnd.INCnd;
 import com.app.dao.sql.cnd.LikeCnd;
 import com.app.dao.sql.cnd.NotEQCnd;
+import com.app.dao.sql.cnd.RTCnd;
 import com.app.dao.sql.sort.AscSort;
 import com.app.dao.sql.sort.DescSort;
 import com.app.entity.repertory.RepertoryGoodsBatchEntity;
@@ -175,7 +176,7 @@ public class ProduceAPI extends Result{
     	}
     	RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(jdbcDao);
     	SQLWhere sqlWhere = new SQLWhere(new INCnd(RepertoryGoodsBatchEntity.GOODS_ID, "select component_id from t_repertory_goods_component where goods_id in ( select goods_id from t_task_produce  where produce_id= "+id+")"));
-    	
+    	sqlWhere.and(new RTCnd(RepertoryGoodsBatchEntity.INVENTORY, 0));
     	long count = batch.getCount(sqlWhere);
     	batch.outPutOther(RepertoryGoodsBatchEntity.NAME,RepertoryGoodsBatchEntity.TYPE,RepertoryGoodsBatchEntity.CODE);
     	List<RepertoryGoodsBatchEntity> list = batch.getListVO(iDisplayStart,iDisplayLength,sqlWhere.orderBy(new DescSort(RepertoryGoodsBatchEntity.GOODS_ID,RepertoryGoodsBatchEntity.GOODS_BATCH_ID)));
@@ -479,6 +480,7 @@ public class ProduceAPI extends Result{
     		entity.update(TaskProduceEntity.STATUS);
     		return success("提交成功");
     	}catch(Exception e){
+    		logger.error("提交失败", e);
     		return error("提交失败");
     	}
         

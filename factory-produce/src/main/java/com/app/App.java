@@ -6,7 +6,7 @@ package com.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
+//https://jingyan.baidu.com/article/0a52e3f418240ebf63ed7244.html
 @SpringBootApplication
 public class App {
 

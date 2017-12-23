@@ -26,12 +26,29 @@ public class WxMessageOperatorTaskProduceImp implements WxMessageOperatorInterfa
 		WxMpService wxMpService = WeiXinServer.getWeChatWxMpService();
 		JsonArray jaNO = new JsonArray();
 		JsonArray jaYES = new JsonArray();
+		String userName = "",date="",content="",remark="",first="";
+		if(jo.has("user_name") && !jo.get("user_name").isJsonNull()){
+			userName = jo.get("user_name").getAsString();
+		}
+		if(jo.has("date") && !jo.get("date").isJsonNull()){
+			date = jo.get("date").getAsString();
+		}
+		if(jo.has("content") && !jo.get("content").isJsonNull()){
+			content = jo.get("content").getAsString();
+		}
+		if(jo.has("remark") && !jo.get("remark").isJsonNull()){
+			remark = jo.get("remark").getAsString();
+		}
+		if(jo.has("first") && !jo.get("first").isJsonNull()){
+			first = jo.get("first").getAsString();
+		}
+		
 		if(!jo.has("open_id")){
 			List<SysUserBindingInfo> list = new SysUserBindingInfo(new Result().getJdbcDao()).setUserId(jo.get("user_id").getAsLong()).setType(SysUserBindingInfo.BINDING_TYPE_WEIXIN).queryCustomCacheValue(1);
 			if(list != null && list.size() > 0){
 				for(SysUserBindingInfo user : list){
 					try{
-						String msgid = sendMessage( wxMpService,user.getOpenId(),jo.get("user_name").getAsString(),jo.get("date").getAsString(),jo.get("content").getAsString(),jo.get("remark").getAsString(),jo.get("first").getAsString());
+						String msgid = sendMessage( wxMpService,user.getOpenId(),userName,date,content,remark,first);
 						jaYES.add(user.getOpenId()+" - "+msgid);
 					}catch(Exception e){
 						jaNO.add(user.getOpenId());
@@ -39,15 +56,16 @@ public class WxMessageOperatorTaskProduceImp implements WxMessageOperatorInterfa
 					}
 				}
 			}else{
-				jo.addProperty("exception", "用户未绑定");
-				throw new Exception("用户未绑定");
+				//jo.addProperty("exception", "用户未绑定");
+				//throw new Exception("用户未绑定");
+				logger.error(jo.get("user_id").getAsLong()+"用户未绑定");
 			}
 		}else{
 			JsonArray ja2 = jo.get("open_id").getAsJsonArray();
 			for(JsonElement je : ja2){
 				String openId = je.getAsString();
 				try{
-					String msgid = sendMessage( wxMpService,openId,jo.get("user_name").getAsString(),jo.get("date").getAsString(),jo.get("content").getAsString(),jo.get("remark").getAsString(),jo.get("first").getAsString()); 
+					String msgid = sendMessage( wxMpService,openId,userName,date,content,remark,first); 
 					jaYES.add(openId+" - "+msgid);
 				}catch(Exception e){
 					logger.error(openId+"发送消息异常", e);

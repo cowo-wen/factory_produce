@@ -7,8 +7,8 @@ import com.google.gson.Gson;
 public class INCnd  extends Cnd{
 
 	/**
-	 * 
-	 * @param name
+	 * 包含条件
+	 * @param name 字段名称
 	 * @param object 可以为数组或List集合或select开始的查询语句
 	 */
 	public INCnd(String name, Object object) {

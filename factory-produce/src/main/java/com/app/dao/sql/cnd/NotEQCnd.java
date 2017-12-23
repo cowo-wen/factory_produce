@@ -4,6 +4,11 @@ package com.app.dao.sql.cnd;
 
 public class NotEQCnd  extends Cnd{
 
+	/**
+	 * 不等于条件
+	 * @param name 字段名称
+	 * @param object 可以为数组或List集合或select开始的查询语句
+	 */
 	public NotEQCnd(String name, Object object) {
 		super(name, object);
 	}

@@ -1,10 +1,20 @@
 package com.app.dao.sql.cnd;
 
+/**
+ * 大于条件类
+ * @author cowo
+ *
+ */
 public class RTCnd  extends Cnd{
 	
 
 	
 
+	/**
+	 * 大于条件
+	 * @param name 字段名称
+	 * @param object 字段值
+	 */
 	public RTCnd(String name, Object object) {
 		super(name, object);
 		// TODO Auto-generated constructor stub

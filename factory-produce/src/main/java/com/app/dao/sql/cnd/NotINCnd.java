@@ -7,8 +7,8 @@ import com.google.gson.Gson;
 public class NotINCnd  extends Cnd{
 
 	/**
-	 * 
-	 * @param name
+	 * 不包含条件
+	 * @param name 字段名称
 	 * @param object 可以为数组或List集合或select开始的查询语句
 	 */
 	public NotINCnd(String name, Object object) {

@@ -530,9 +530,13 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 				jo.addProperty("user_id", worker.getUserId());
 				jo.addProperty("user_name", userName.toString());
 				jo.addProperty("date", PublicMethod.formatDateStr(new Date(), "MM-dd HH:mm"));
-				jo.addProperty("content", this.remark);
-				jo.addProperty("remark", proportion.toString()+"请于"+PublicMethod.formatDateStr(this.beginTime, "MM-dd HH:mm")+"至"+PublicMethod.formatDateStr(this.endTime, "MM-dd HH:mm")+"完成");
-				jo.addProperty("first", this.name);
+				jo.addProperty("remark", this.remark);
+				jo.addProperty("first", produceName);
+				if(produceType == 1){
+					jo.addProperty("content", "生产任务;["+getName()+"]生产量"+this.amount+";工钱"+this.wages+";其中"+proportion.toString()+"请于"+PublicMethod.formatDateStr(this.beginTime, "MM月dd日HH:mm")+"至"+PublicMethod.formatDateStr(this.endTime, "MM月dd日HH:mm")+"完成");
+				}else{
+					jo.addProperty("content", "普通任务;生产量"+this.amount+";工钱"+this.wages+";其中"+proportion.toString()+"请于"+PublicMethod.formatDateStr(this.beginTime, "MM月dd日HH:mm")+"至"+PublicMethod.formatDateStr(this.endTime, "MM月dd日HH:mm")+"完成");
+				}
                 WeixinMessageContainer.pushMessage(StaticBean.WEIXIN_MESSAGE_TYPE_TASK_PRODUCE_MESSAGE,worker.getUserId(),jo);
 			}
 		}
