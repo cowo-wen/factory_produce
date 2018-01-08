@@ -5,8 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpSession;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,6 +25,7 @@ import com.app.dao.sql.cnd.EQCnd;
 import com.app.entity.sys.SysRoleEntity;
 import com.app.entity.sys.SysUserEntity;
 import com.app.entity.sys.SysUserRoleEntity;
+import com.app.service.sys.UserCache;
 import com.app.util.PublicMethod;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -36,7 +40,8 @@ import com.google.gson.JsonParser;
 @Scope("prototype")//设置成多例
 public class UserRoleAPI extends Result{
     public static Log logger = LogFactory.getLog(UserRoleAPI.class);
-    
+    @Autowired  
+    private HttpSession session;
     
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list_user/{id}")
     public String listByRole(@PathVariable("id") Long id) {
@@ -59,11 +64,29 @@ public class UserRoleAPI extends Result{
     	String sql ="";
     	if(userLogin.getType() == SysUserEntity.USER_ADMIN){//管理员的角色，可以获取所有的角色
     		
-    		sql ="select r.role_id,r.parent_id,role_name ,case when ur.role_id > 0 then 'true' else 'false' end as checked,'true' as open from t_sys_role r  left join t_sys_user_role ur on r.role_id = ur.role_id and ur.user_id ="+id+" where valid = 1 ";
+    		sql ="select distinct(r.role_id),r.parent_id,role_name ,case when ur.role_id > 0 then 'true' else 'false' end as checked,'true' as open from t_sys_role r  left join t_sys_user_role ur on r.role_id = ur.role_id and ur.user_id ="+id+" where valid = 1 ";
     		
     		
     	}else{
-    		sql ="select r.role_id,r.parent_id,role_name ,case when ur.role_id > 0 then 'true' else 'false' end as checked,'true' as open from t_sys_role r  left join t_sys_user_role ur on r.role_id = ur.role_id and ur.user_id ="+id+" where valid = 1 and r.role_id in (select role_id from t_sys_user_role where user_id ="+userDetails.getUserId()+"  )";
+    		StringBuilder childSQL = new StringBuilder();
+    		
+    		//获取用户的所有角色及所有子角色
+    		/**
+    		List<Map<String,Object>> listMap = user.getListMap("select * from  t_sys_role where role_id in (select role_id from t_sys_user_role where user_id ="+userLogin.getUserId+")");
+    		if(listMap != null && listMap.size() > 0){
+    			childSQL.append(" and ( r.link_code like '").append(listMap.get(0).get(SysRoleEntity.LINK_CODE)).append("%'");
+    			for(int i = 1,len = listMap.size();i<len;i++){
+    				childSQL.append(" or  r.link_code like '").append(listMap.get(i).get(SysRoleEntity.LINK_CODE)).append("%'");
+    			}
+    			childSQL.append(")");
+    		}*/
+    		
+    		//获取用户当前登录的角色及所有子角色
+    		childSQL.append(" and  r.link_code like '").append(UserCache.getCurrentRole(userDetails.getUserId(), session.getId()).get(SysRoleEntity.LINK_CODE)).append("%'");
+    		
+    		
+    		
+    		sql ="select distinct(r.role_id),r.parent_id,role_name ,case when ur.role_id > 0 then 'true' else 'false' end as checked,'true' as open from t_sys_role r  left join t_sys_user_role ur on r.role_id = ur.role_id and ur.user_id ="+id+" where valid = 1 "+childSQL.toString();
     		
     		
     	}
@@ -130,6 +153,7 @@ public class UserRoleAPI extends Result{
         		userRole.setUserId(userId);
         		userRole.insert();
         	}
+        	UserCache.delUserLoginTemp(userId);
             return success("分配成功");
     	}catch(Exception e){
     		return error("分配失败");

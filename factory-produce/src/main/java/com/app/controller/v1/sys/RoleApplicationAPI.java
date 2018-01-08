@@ -2,10 +2,8 @@ package com.app.controller.v1.sys;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,8 +23,8 @@ import com.app.entity.sys.SysApplicationEntity;
 import com.app.entity.sys.SysRoleApplicationEntity;
 import com.app.entity.sys.SysRoleEntity;
 import com.app.entity.sys.SysUserEntity;
+import com.app.service.sys.UserCache;
 import com.app.util.PublicMethod;
-import com.app.util.RedisAPI;
 import com.app.util.StaticBean;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -168,13 +166,15 @@ public class RoleApplicationAPI extends Result{
 	    		roleApp.setApplicationId(appId);
 	    		roleApp.insert();
 	    	}
+	    	/**
 	    	RedisAPI redisAPI = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
-	    	Set<String> set =redisAPI.keys("temp:userinfo:login:");
+	    	Set<String> set =redisAPI.keys(RedisKeyBean.TEMP_USERINFO_LOGIN+"*");
 	    	Iterator<String> iterator = set.iterator();
 	    	while(iterator.hasNext()){
 	    		String key = redisAPI.get(iterator.next());
 	    		redisAPI.del(key);
-	    	}
+	    	}*/
+	    	UserCache.delUserLoginTemp();//删除所有用户的登录信息
 	    	return success("分配成功");
     	}catch(Exception e){
     		return error("分配失败");

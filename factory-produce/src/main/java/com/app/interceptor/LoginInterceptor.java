@@ -9,12 +9,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.app.bean.SysUserDetails;
+import com.app.service.sys.UserCache;
 import com.app.util.NetworkUtil;
 import com.app.util.PublicMethod;
-import com.app.util.RedisAPI;
 
 /**
  * 功能说明：登录拦截
@@ -50,10 +52,11 @@ public class LoginInterceptor implements HandlerInterceptor
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object obj) throws Exception
     {
         //logger.error("preHandle-----权限拦截-------拦截器获取:" + request.getSession().getId());
+    	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
+    	logger.error("preHandle---------登录拦截-------获取用户id="+userDetails.getUserId());
     	String url = request.getRequestURI();
     	if(!url.equals("/v1/sys/loginuser/logininfo")){
-    		
-    		String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:userinfo:login:"+request.getSession().getId());
+    		String value = UserCache.getUserLoginInfo(userDetails.getUserId(), request.getSession().getId());
             if(PublicMethod.isEmptyStr(value)){
             	request.setCharacterEncoding("UTF-8");
                 response.setContentType("text/html;charset=utf-8");

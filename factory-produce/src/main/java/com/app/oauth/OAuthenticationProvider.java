@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 
 import com.app.bean.SysUserDetails;
 import com.app.config.CustomWebAuthenticationDetails;
+import com.app.controller.oauth.IdentifyingCodeAPI;
 import com.app.dao.JdbcDao;
 import com.app.entity.sys.SysUserBindingInfo;
 import com.app.entity.sys.SysUserEntity;
@@ -64,8 +65,14 @@ public class OAuthenticationProvider implements AuthenticationProvider {
 	        		sysUserEntity.setUserId(list.get(0).getUserId()).loadVo();
 	        	}else{
 	        		throw new LoginAccountStatusException("不存在的用户");
-	        		
 	        	}
+	        	if(sysUserEntity.getValid() == null || sysUserEntity.getValid() == 2){
+	            	 throw new LoginAccountStatusException("用户已被禁用");
+	             }else if(sysUserEntity.getValid() == 3){
+	            	 throw new LoginAccountStatusException("不存在的用户");
+	             }else if(sysUserEntity.getValid() != 1){
+	            	 throw new LoginAccountStatusException("用户状态异常");
+	             }
 			} catch (Exception e) {
 				 throw new LoginAccountStatusException(e.getMessage());
 			}
@@ -87,7 +94,7 @@ public class OAuthenticationProvider implements AuthenticationProvider {
              if(PublicMethod.isEmptyStr(token)){
              	throw new LoginAccountStatusException("验证码不能为空");
              }
-             String checkToken = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("identifyingcode:login:"+session.getId());
+             String checkToken = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(IdentifyingCodeAPI.IDENTIFYINGCODE_LOGIN+session.getId());
              if(PublicMethod.isEmptyStr(checkToken)){
              	throw new LoginAccountStatusException("验证码已失效");
              }
@@ -110,8 +117,12 @@ public class OAuthenticationProvider implements AuthenticationProvider {
              if (!MD5.encode(password).equals(user.getPassword())) {
                  throw new LoginAccountStatusException("密码不正确");
              }
-             if(user.getValid() == null || user.getValid() != 1){
-             	throw new LoginAccountStatusException("用户已被锁，请联系管理员");
+             if(user.getValid() == null || user.getValid() == 2){
+            	 throw new LoginAccountStatusException("用户已被禁用");
+             }else if(user.getValid() == 3){
+            	 throw new LoginAccountStatusException("不存在的用户");
+             }else if(user.getValid() != 1){
+            	 throw new LoginAccountStatusException("用户状态异常");
              }
              Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
              if(user.getType() != 1 && (authorities == null || authorities.size() == 0)){

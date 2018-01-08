@@ -19,6 +19,8 @@ import com.app.dao.JdbcDao;
 import com.app.entity.common.CacheVo;
 import com.app.entity.common.CustomCache;
 import com.app.entity.common.TableCache;
+import com.app.entity.sys.SysUserEntity;
+import com.app.util.PublicMethod;
 import com.google.gson.annotations.Expose;
 
 /**
@@ -162,6 +164,12 @@ public class TaskWorkerEntity extends CacheVo  implements Serializable
 	}
 
 	public String getUserName() {
+		if(!PublicMethod.isEmptyValue(this.userId)){
+			SysUserEntity user = new SysUserEntity(jdbcDao);
+			user.setUserId(this.userId).loadVo();
+			this.userCode = user.getNumber();
+			return user.getUserName();
+		}
 		return userName;
 	}
 

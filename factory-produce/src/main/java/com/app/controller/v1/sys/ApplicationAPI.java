@@ -96,7 +96,6 @@ public class ApplicationAPI extends Result {
     @RequestMapping(method=RequestMethod.DELETE,value="/delete/{id}")
     public String delete(@PathVariable("id") Long id) {
     	SysApplicationEntity app = new SysApplicationEntity(jdbcDao);
-    	app.useTransaction();
     	app.setApplicationId(id);
     	try{
     		app.deleteLinkChild(SysApplicationEntity.PARENT_ID);

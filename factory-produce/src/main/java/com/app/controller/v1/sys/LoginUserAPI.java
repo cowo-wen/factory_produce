@@ -29,6 +29,7 @@ import com.app.entity.sys.SysRoleApplicationEntity;
 import com.app.entity.sys.SysRoleEntity;
 import com.app.entity.sys.SysUserEntity;
 import com.app.entity.sys.SysUserRoleEntity;
+import com.app.service.sys.UserCache;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
 import com.app.util.StaticBean;
@@ -60,19 +61,13 @@ public class LoginUserAPI extends Result{
      */
     @RequestMapping(method=RequestMethod.GET,value="/logininfo")
     public String loginInfo(@RequestParam String terminalType) {
-    	RedisAPI redisAPI = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
-    	String tempCurrentRole = "temp:role:current:select:"+session.getId();//当前选中的角色key
-    	String tempLoginUser = "temp:userinfo:login:"+session.getId();//用户登录保存的用户信息key
-    	String appCodeKey = "temp:permission:application_code:"+session.getId();
-    	Map<String,String> currentRole = redisAPI.hgetAll(tempCurrentRole);
-    	String result = redisAPI.get(tempLoginUser);
+    	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
+    	Map<String,String> currentRole = UserCache.getCurrentRole(userDetails.getUserId(), session.getId());
+    	String result = UserCache.getUserLoginInfo(userDetails.getUserId(), session.getId());
     	if(PublicMethod.isEmptyStr(result) || currentRole == null || currentRole.size() == 0 || (System.currentTimeMillis() - Long.parseLong(currentRole.get("time")) > 1000*60*60*16)){
     		long time = System.currentTimeMillis();
-        	
-        	redisAPI.del(appCodeKey);
-        	
+        	UserCache.delUserLoginPermission(userDetails.getUserId(), session.getId());//删除用户登录的权限
         	logger.error("==========1=================消耗时间："+(System.currentTimeMillis()-time));
-        	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
         	SysUserEntity user = new SysUserEntity(jdbcDao);
         	user.setUserId(userDetails.getUserId());
         	user.loadVo();
@@ -91,12 +86,10 @@ public class LoginUserAPI extends Result{
     			currentRole.put("time", String.valueOf(System.currentTimeMillis()));
     			currentRole.put("pc_index", role.getPcIndex());
     			currentRole.put("wc_index", role.getWxIndex());
-    			//String key = session.getId()+":role:current:select";
-    			redisAPI.hSet(tempCurrentRole,new String[]{"role","time","pc_index","wc_index","name"},new String[]{currentRole.get("role"),currentRole.get("time"),currentRole.get("pc_index"),currentRole.get("wc_index"),currentRole.get("name")});
-    			redisAPI.expire(tempCurrentRole, 86400);//保存一日
+    			UserCache.setCurrentRole(userDetails.getUserId(), session.getId(), role);
     			list = new SysApplicationEntity(jdbcDao).getListVO(new SQLWhere(new EQCnd(SysApplicationEntity.TERMINAL_TYPE,type)).and(new EQCnd(SysApplicationEntity.VALID, StaticBean.YES)).orderBy(new AscSort(SysApplicationEntity.SORT_CODE,SysApplicationEntity.APPLICATION_ID)));
     		}else{
-    			currentRole = redisAPI.hgetAll(tempCurrentRole);
+    			//currentRole = redisAPI.hgetAll(tempCurrentRole);
     	    	List<SysUserRoleEntity> roles = new SysUserRoleEntity(jdbcDao).setUserId(user.getUserId()).queryCustomCacheValue(0, null);
     	    	if(roles != null){
     	    		for(SysUserRoleEntity ur : roles){
@@ -112,26 +105,24 @@ public class LoginUserAPI extends Result{
     	    	if(currentRole == null || currentRole.size() == 0){//获取角色
     	    		if(roleList.size() > 0){
     	    			currentRole = new HashMap<String,String>();
-    	    			//String key = session.getId()+":role:current:select";
     	    			currentRole.put("role", String.valueOf(roleList.get(0).getRoleId()));
     	    			currentRole.put("name", roleList.get(0).getRoleName());
     	    			currentRole.put("time", String.valueOf(System.currentTimeMillis()));
     	    			currentRole.put("pc_index", roleList.get(0).getPcIndex());
         				currentRole.put("wc_index", roleList.get(0).getWxIndex());
-    	    			redisAPI.hSet(tempCurrentRole,new String[]{"role","time","pc_index","wc_index","name"},new String[]{currentRole.get("role"),currentRole.get("time"),currentRole.get("pc_index"),currentRole.get("wc_index"),currentRole.get("name")});
-    	    			redisAPI.expire(tempCurrentRole, 86400);//保存一日
+    	    			
+    	    			UserCache.setCurrentRole(userDetails.getUserId(), session.getId(), roleList.get(0));
     	    		}
     	    	}else{
     	    		if(System.currentTimeMillis() - Long.parseLong(currentRole.get("time")) > 1000*60*60*16){//当保存的数据大于16小时即更新
     	    			if(roleList.size() > 0){
-    	    				//String key = session.getId()+":role:current:select";
     		    			currentRole.put("role", String.valueOf(roleList.get(0).getRoleId()));
     		    			currentRole.put("time", String.valueOf(System.currentTimeMillis()));
     		    			currentRole.put("name", roleList.get(0).getRoleName());
     		    			currentRole.put("pc_index", roleList.get(0).getPcIndex());
     	    				currentRole.put("wc_index", roleList.get(0).getWxIndex());
-    	    				redisAPI.hSet(tempCurrentRole,new String[]{"role","time","pc_index","wc_index","name"},new String[]{currentRole.get("role"),currentRole.get("time"),currentRole.get("pc_index"),currentRole.get("wc_index"),currentRole.get("name")});
-    		    			redisAPI.expire(tempCurrentRole, 86400);//保存一日
+    		    			
+    		    			UserCache.setCurrentRole(userDetails.getUserId(), session.getId(), roleList.get(0));
     	    			}
     	    			
     	    		}
@@ -165,14 +156,7 @@ public class LoginUserAPI extends Result{
     		}
     		
         	if(list != null && list.size() > 0){
-        		for(SysApplicationEntity entity : list){
-        			try{
-        				redisAPI.hSet(appCodeKey, entity.getApplicationCode(), entity.getUrl());
-        			}catch(Exception e){
-        				logger.error("获取应用", e);
-        			}
-        		}
-        		redisAPI.expire(appCodeKey, 86400);//设置一天有效
+        		UserCache.setUserLoginPermission(userDetails.getUserId(), session.getId(), list);
         	}
         	logger.error("==========6=================消耗时间："+(System.currentTimeMillis()-time));
         	Collections.sort(list);
@@ -191,26 +175,27 @@ public class LoginUserAPI extends Result{
         	result = success(map);
         	logger.error("==========9=================消耗时间："+(System.currentTimeMillis()-time));
         	
-        	redisAPI.putOneDay(tempLoginUser, result);//保存用户信息
+        	UserCache.saveUserLoginInfo(userDetails.getUserId(), session.getId(), result);
     	}
     	
         return result;
     }
     
     /**
-     * 获取登录的用户信息
+     * 获取登录的用户当前权限的子权限
      * @return
      * @
      */
     @RequestMapping(method=RequestMethod.GET,value="/children_app/{appcode}")
     public String childrenApp(@PathVariable("appcode") String appcode){
+    	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
     	RedisAPI redisAPI = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
     	String childrenAppKey = "temp:login:children_app:"+session.getId()+":"+appcode;
     	List<SysApplicationEntity> list = new ArrayList<SysApplicationEntity>();
     	if(redisAPI.exists(childrenAppKey)){//判断是否存在子类的app列表
     		return redisAPI.get(childrenAppKey);
     	}else{
-    		String userinfo = redisAPI.get("temp:userinfo:login:"+session.getId());//保存用户信息
+    		String userinfo = UserCache.getUserLoginInfo(userDetails.getUserId(), session.getId());
     		if(!PublicMethod.isEmptyStr(userinfo)){
     			JsonObject jo = new JsonParser().parse(userinfo).getAsJsonObject();
     			JsonArray ja = jo.get("application").getAsJsonArray();
@@ -243,18 +228,14 @@ public class LoginUserAPI extends Result{
     @RequestMapping(method=RequestMethod.PUT,value="/role/{id}")
     public String role(@PathVariable("id") Long id) {
     	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
-    	String key = "temp:role:current:select:"+session.getId();
-    	RedisAPI redisAPI = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
     	if(id != null && id > 0){
     		SysUserRoleEntity userRole = new SysUserRoleEntity(jdbcDao).setUserId(userDetails.getUserId()).queryCustomCacheVo(0, id.toString());
     		if(userRole != null &&  !PublicMethod.isEmptyValue(userRole.getId()) ){
     			SysRoleEntity role = new  SysRoleEntity(jdbcDao);
     			role.setRoleId(userRole.getRoleId()).loadVo();
-    			redisAPI.hSet(key,new String[]{"role","time"},new String[]{String.valueOf(userRole.getRoleId()),String.valueOf(System.currentTimeMillis())});
-    			redisAPI.hSet(key,new String[]{"role","time","pc_index","wc_index","name"},new String[]{String.valueOf(userRole.getRoleId()),String.valueOf(System.currentTimeMillis()),role.getPcIndex(),role.getWxIndex(),role.getRoleName()});
-    			redisAPI.expire(key, 86400);//保存一日
+    			UserCache.setCurrentRole(userDetails.getUserId(), session.getId(), role);
     			
-    			redisAPI.del("temp:userinfo:login:"+session.getId());//删除登录信息
+    			UserCache.delUserLoginTemp(userRole.getUserId(), session.getId());
     			return success("切换角色成功");
     		}else{
     			return error("非法的角色");

@@ -155,7 +155,7 @@ public class SysUserEntity extends CacheVo  implements Serializable
 	}
 
 	public String getUserName() {
-		return userName;
+		return userName==null?"":userName;
 	}
 
 	public SysUserEntity setUserName(String userName) {

@@ -9,11 +9,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.app.bean.SysUserDetails;
+import com.app.service.sys.UserCache;
 import com.app.util.PublicMethod;
-import com.app.util.RedisAPI;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -52,8 +54,11 @@ public class PermissionInterceptor implements HandlerInterceptor
     {
     	
     	long time = System.currentTimeMillis();
+    	SysUserDetails userDetails = (SysUserDetails) SecurityContextHolder.getContext().getAuthentication() .getPrincipal();
+    	logger.error("preHandle------权限拦截----------获取用户id="+userDetails.getUserId());
         try{
-        	String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("temp:userinfo:login:"+request.getSession().getId());
+        	//String value = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(RedisKeyBean.TEMP_USERINFO_LOGIN+userDetails.getUserId()+":"+request.getSession().getId());
+        	String value = UserCache.getUserLoginInfo(userDetails.getUserId(), request.getSession().getId());
             if(PublicMethod.isEmptyStr(value)){
             	request.setCharacterEncoding("UTF-8");
                 response.setContentType("text/html;charset=utf-8");
@@ -70,7 +75,8 @@ public class PermissionInterceptor implements HandlerInterceptor
                         response.setContentType("text/html;charset=utf-8");
                         response.getWriter().print("参数不全");
             		}else{
-            			String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).hget("temp:permission:application_code:"+request.getSession().getId(), applicationCode,2);
+            			//String url = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).hget(RedisKeyBean.TEMP_PERMISSION_APPLICATION_CODE+userDetails.getUserId()+":"+request.getSession().getId(), applicationCode,2);
+            			String url =UserCache.getUserOperatorPermission(userDetails.getUserId(), request.getSession().getId(), applicationCode);
             			if(PublicMethod.isEmptyStr(url)){
             				request.setCharacterEncoding("UTF-8");
                             response.setContentType("text/html;charset=utf-8");

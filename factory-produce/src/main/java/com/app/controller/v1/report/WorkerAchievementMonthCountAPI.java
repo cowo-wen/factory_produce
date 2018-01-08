@@ -22,11 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app.controller.common.Result;
 import com.app.dao.sql.SQLWhere;
-import com.app.dao.sql.cnd.LTEQCnd;
+import com.app.dao.sql.cnd.EQCnd;
 import com.app.dao.sql.cnd.LikeCnd;
-import com.app.dao.sql.cnd.RTEQCnd;
 import com.app.dao.sql.sort.DescSort;
-import com.app.entity.report.WorkerAchievementDayEntity;
+import com.app.entity.report.WorkerAchievementMonthEntity;
 import com.app.util.PublicMethod;
 import com.app.util.StaticBean;
 import com.google.gson.JsonArray;
@@ -35,15 +34,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 /**
- * 功能说明：日绩效统计
+ * 功能说明：月绩效统计
  * 
  * @author chenwen 2017-7-13
  */
 @RestController
-@RequestMapping("/v1/permission/report/worker_day")
+@RequestMapping("/v1/permission/report/worker_month")
 @Scope("prototype")
-public class WorkerAchievementDayCountAPI extends Result{
-    public static Log logger = LogFactory.getLog(WorkerAchievementDayCountAPI.class);
+public class WorkerAchievementMonthCountAPI extends Result{
+    public static Log logger = LogFactory.getLog(WorkerAchievementMonthCountAPI.class);
     
     @Autowired  
     private HttpServletRequest request;
@@ -54,13 +53,12 @@ public class WorkerAchievementDayCountAPI extends Result{
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
     public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
-    	SQLWhere sql = new SQLWhere().orderBy(new DescSort(WorkerAchievementDayEntity.ID));
+    	SQLWhere sql = new SQLWhere().orderBy(new DescSort(WorkerAchievementMonthEntity.ID));
     	int iDisplayStart = 0;// 起始  
     	int iDisplayLength = 10;// size 
     	int sEcho = 0;
     	Date date = new Date();
-    	String beiginTime = PublicMethod.formatDateStr(date, "yyyyMMdd");
-    	String endTime = PublicMethod.formatDateStr(date,"yyyyMMdd");
+    	String month = PublicMethod.formatDateStr(date, "yyyyMM");
     	
     	for(JsonElement je : jo){
     		JsonObject jsonObject = je.getAsJsonObject();
@@ -70,20 +68,17 @@ public class WorkerAchievementDayCountAPI extends Result{
                 iDisplayStart = jsonObject.get(VALUE).getAsInt();  
             else if (jsonObject.get(NAME).getAsString().equals(I_DISPLAY_LENGTH))  
                 iDisplayLength = jsonObject.get(VALUE).getAsInt(); 
-            else if (jsonObject.get(NAME).getAsString().equals(WorkerAchievementDayEntity.COUNT_DAY)){  
-            	sql.and(new LikeCnd(WorkerAchievementDayEntity.COUNT_DAY,jsonObject.get(VALUE).getAsString()));
-            }else if(jsonObject.get(NAME).getAsString().equals("beigin_time")){
-            	beiginTime = jsonObject.get(VALUE).getAsString().replaceAll("-", "");
-            }else if(jsonObject.get(NAME).getAsString().equals("end_time")){
-            	endTime = jsonObject.get(VALUE).getAsString().replaceAll("-", "");
+            else if (jsonObject.get(NAME).getAsString().equals(WorkerAchievementMonthEntity.COUNT_MONTH)){  
+            	sql.and(new LikeCnd(WorkerAchievementMonthEntity.COUNT_MONTH,jsonObject.get(VALUE).getAsString()));
+            }else if(jsonObject.get(NAME).getAsString().equals("month")){
+            	month = jsonObject.get(VALUE).getAsString().replaceAll("-", "");
             }
     	}
-    	sql.and(new RTEQCnd(WorkerAchievementDayEntity.COUNT_DAY, Integer.parseInt(beiginTime)));
-    	sql.and(new LTEQCnd(WorkerAchievementDayEntity.COUNT_DAY, Integer.parseInt(endTime)));
+    	sql.and(new EQCnd(WorkerAchievementMonthEntity.COUNT_MONTH, Integer.parseInt(month)));
     	
-    	WorkerAchievementDayEntity entity = new WorkerAchievementDayEntity(jdbcDao);
-    	entity.outPutOther(WorkerAchievementDayEntity.USER_NAME);
-    	List<WorkerAchievementDayEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
+    	WorkerAchievementMonthEntity entity = new WorkerAchievementMonthEntity(jdbcDao);
+    	entity.outPutOther(WorkerAchievementMonthEntity.USER_NAME);
+    	List<WorkerAchievementMonthEntity> list = entity.getListVO(iDisplayStart, iDisplayLength, sql);
     	
     	
     	long count = entity.getCount(sql);
@@ -104,7 +99,7 @@ public class WorkerAchievementDayCountAPI extends Result{
      */
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/vo/{id}")
     public String vo(@PathVariable("id") Long id) {
-    	WorkerAchievementDayEntity entity = new WorkerAchievementDayEntity(jdbcDao);
+    	WorkerAchievementMonthEntity entity = new WorkerAchievementMonthEntity(jdbcDao);
     	entity.setId(id);
     	entity.loadVo();
         return success(entity);
@@ -126,34 +121,29 @@ public class WorkerAchievementDayCountAPI extends Result{
         {
         	
         	JsonObject jo = new JsonParser().parse(aoData).getAsJsonObject();
-        	SQLWhere sql = new SQLWhere().orderBy(new DescSort(WorkerAchievementDayEntity.COUNT_DAY,WorkerAchievementDayEntity.ID));
+        	SQLWhere sql = new SQLWhere().orderBy(new DescSort(WorkerAchievementMonthEntity.COUNT_MONTH,WorkerAchievementMonthEntity.ID));
         	Date date = new Date();
-        	String beiginTime = PublicMethod.formatDateStr(date, "yyyyMMdd");
-        	String endTime = PublicMethod.formatDateStr(date,"yyyyMMdd");
+        	String month = PublicMethod.formatDateStr(date, "yyyyMM");
         	
-        	if(jo.has("beigin_time")){
-        		beiginTime = jo.get("beigin_time").getAsString().replaceAll("-", "");
-        	}
-        	
-        	if(jo.has("end_time")){
-        		endTime = jo.get("end_time").getAsString().replaceAll("-", "");
+        	if(jo.has("month")){
+        		month = jo.get("month").getAsString().replaceAll("-", "");
         	}
         	
         	
-        	sql.and(new RTEQCnd(WorkerAchievementDayEntity.COUNT_DAY, Integer.parseInt(beiginTime)));
-        	sql.and(new LTEQCnd(WorkerAchievementDayEntity.COUNT_DAY, Integer.parseInt(endTime)));
         	
-        	WorkerAchievementDayEntity entity = new WorkerAchievementDayEntity(jdbcDao);
-        	entity.outPutOther(WorkerAchievementDayEntity.USER_NAME);
-        	List<WorkerAchievementDayEntity> list = entity.getListVO(sql);
-        	String fileName = beiginTime+"-"+endTime+"日生产绩效.xls";
+        	sql.and(new EQCnd(WorkerAchievementMonthEntity.COUNT_MONTH, Integer.parseInt(month)));
+        	
+        	WorkerAchievementMonthEntity entity = new WorkerAchievementMonthEntity(jdbcDao);
+        	entity.outPutOther(WorkerAchievementMonthEntity.USER_NAME);
+        	List<WorkerAchievementMonthEntity> list = entity.getListVO(sql);
+        	String fileName =month+"月生产绩效.xls";
         	StringBuilder sb = new StringBuilder();
-        	sb.append("员工姓名").append(StaticBean._T).append("日期").append(StaticBean._T).append("完成任务").append(StaticBean._T).append("超时任务").append(StaticBean._T).append("返工次数").append(StaticBean._T)
+        	sb.append("员工姓名").append(StaticBean._T).append("月份").append(StaticBean._T).append("完成任务").append(StaticBean._T).append("超时任务").append(StaticBean._T).append("返工次数").append(StaticBean._T)
         	.append("生产收入").append(StaticBean._T).append("奖励收入").append(StaticBean._T).append("惩罚支出").append(StaticBean._T).append("总收入(元)").append(StaticBean._T).append(StaticBean._R).append(StaticBean._N);
         	
         	
-        	for(WorkerAchievementDayEntity count : list){
-        		sb.append(count.getUserName()).append(StaticBean._T).append(count.getCountDay()).append(StaticBean._T).append(count.getTaskTime()).append(StaticBean._T).append(count.getOvertime()).append(StaticBean._T).append(count.getReworkTime()).append(StaticBean._T)
+        	for(WorkerAchievementMonthEntity count : list){
+        		sb.append(count.getUserName()).append(StaticBean._T).append(count.getCountMonth()).append(StaticBean._T).append(count.getTaskTime()).append(StaticBean._T).append(count.getOvertime()).append(StaticBean._T).append(count.getReworkTime()).append(StaticBean._T)
             	.append(count.getProduceMoney()).append(StaticBean._T).append(count.getBounty()).append(StaticBean._T).append(count.getFines()).append(StaticBean._T).append(count.getProduceMoney()+count.getBounty()-count.getFines()).append(StaticBean._T).append(StaticBean._R).append(StaticBean._N);
             	
         	}

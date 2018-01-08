@@ -42,10 +42,12 @@ import com.app.entity.task.TaskWorkerEntity;
 import com.app.util.NetworkUtil;
 import com.app.util.PublicMethod;
 import com.app.util.StaticBean;
+import com.app.util.WeixinMessageContainer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.xx.util.string.Format;
 
 /**
  * 功能说明：产品批次管理
@@ -307,6 +309,30 @@ public class ProduceAPI extends Result{
     	return list;
     }
     
+    
+    /**
+     * 任务所需原料
+     * @param goodsId 产品id
+     * @return
+     */
+    private List<RepertoryGoodsComponentEntity> getNeedMaterialList(TaskProduceEntity entity){
+    	
+    	if(entity.getProduceType() == TaskProduceEntity.TASK_TYPE_PRODUCE && entity.getAmount() > 0){
+    		RepertoryGoodsComponentEntity goodsEntity = new RepertoryGoodsComponentEntity(jdbcDao);
+    		goodsEntity.outPutOther(RepertoryGoodsComponentEntity.NAME);
+    		List<RepertoryGoodsComponentEntity> list  = goodsEntity.setGoodsId(entity.getGoodsId()).queryCustomCacheValue(0);
+    		if(list != null && list.size() > 0){
+    			for(RepertoryGoodsComponentEntity goods : list){
+    				goods.setNumber(entity.getAmount()*goods.getNumber());
+    			}
+    			return list;
+    		}
+    	}
+    	
+    	return new ArrayList<RepertoryGoodsComponentEntity>();
+    	
+    }
+    
     /**
      * 获取任务的消耗原料数据
      * @param id
@@ -343,7 +369,7 @@ public class ProduceAPI extends Result{
 	    		JsonArray ja = jo.get("batch_list").getAsJsonArray();
 	    		if(ja.size() > 0){
 	    			
-	    			
+	    			entity.setApplyForNumber(entity.getApplyForNumber()+1);
 	    			RepertoryGoodsBillEntity bill = new RepertoryGoodsBillEntity(jdbcDao);
 	    			bill.setGoodsBatchCode(entity.getGoodsBatchCode()+"-"+PublicMethod.formatDateStr(new Date(), "yyyyMMddHHmmss"));
 	    			
@@ -359,6 +385,7 @@ public class ProduceAPI extends Result{
 	    				lockComponent.setGoodsBatchId(object.get(TaskLockComponentEntity.GOODS_BATCH_ID).getAsLong());
 	    				lockComponent.setProduceId(entity.getProduceId());
 	    				lockComponent.setNumber(object.get("value").getAsInt());
+	    				lockComponent.setApplyForNumber(entity.getApplyForNumber());
 	    				long lcId = lockComponent.insert();
 	    				RepertoryGoodsBatchEntity batch = new RepertoryGoodsBatchEntity(jdbcDao);
 	    				batch.setGoodsBatchId(lockComponent.getGoodsBatchId()).loadVo();
@@ -374,10 +401,9 @@ public class ProduceAPI extends Result{
 	    			}
 	    			
 	    		}
-	    		
 	    	}
 	    	entity.setStatus(TaskProduceEntity.PRODUC_STATUS_WORKING);
-	    	entity.update(TaskProduceEntity.STATUS);
+	    	entity.update(TaskProduceEntity.STATUS,TaskProduceEntity.APPLY_FOR_NUMBER);
         	return success("补领成功",entity.getGoodsId());
     	}catch(Exception e){
     		logger.error("补领失败", e);
@@ -411,7 +437,6 @@ public class ProduceAPI extends Result{
     	RepertoryGoodsEntity goods = new RepertoryGoodsEntity(jdbcDao);
     	goods.outPutField(RepertoryGoodsEntity.GOODS_ID,RepertoryGoodsEntity.CODE,RepertoryGoodsEntity.NAME,RepertoryGoodsEntity.PRODUCE_PRICE);
     	List<RepertoryGoodsEntity> list =  goods.getListVO(new SQLWhere(new NotEQCnd(RepertoryGoodsEntity.TYPE,RepertoryGoodsEntity.GOOD_TYPE_MATERIAL)).orderBy(new AscSort(RepertoryGoodsEntity.TYPE,RepertoryGoodsEntity.GOODS_ID)));
-    	
     	
     	
     	Map<String,Object> map = new HashMap<String,Object>();
@@ -478,6 +503,13 @@ public class ProduceAPI extends Result{
     		insertLog(application_code,id,NetworkUtil.getIpAddress(request),"");//插入日志
     		entity.setStatus(TaskProduceEntity.PRODUC_STATUS_CHECK_PENDING);//更新状态正在进行
     		entity.update(TaskProduceEntity.STATUS);
+    		JsonObject jo = new JsonObject();
+    		jo.addProperty("user_id", entity.getOperatorUserId());
+    		jo.addProperty("first", "你好，有新的任务流程需要审核");
+    		jo.addProperty("keyword1", entity.getProduceName());
+    		jo.addProperty("keyword2", entity.getGoodsBatchCode());
+    		jo.addProperty("remark", "如有疑问，请联系提交申请人"+getLoginUser().getUserName());
+    		WeixinMessageContainer.pushMessage(StaticBean.WEIXIN_MESSAGE_TYPE_TASK_CHECKWAIT_MESSAGE,entity.getOperatorUserId(),jo);
     		return success("提交成功");
     	}catch(Exception e){
     		logger.error("提交失败", e);
@@ -515,40 +547,42 @@ public class ProduceAPI extends Result{
     		if(jo.has(TaskReviewEntity.REMARK)){
     			review.setRemark(jo.get(TaskReviewEntity.REMARK).getAsString());//设置备注
     		}
-    		if(entity.getStatus() == TaskProduceEntity.PRODUC_STATUS_FINISH && entity.getProduceType() == 1){//处理完成
+    		if(entity.getStatus() == TaskProduceEntity.PRODUC_STATUS_FINISH){//处理完成
     			review.setNumber(0);//该处地方需要提交入库逻辑
-    			RepertoryGoodsBillEntity goodsBill = new RepertoryGoodsBillEntity(jdbcDao);
-    			goodsBill.setType(RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_PRODUCE);
-    			goodsBill.setGoodsBatchCode(entity.getGoodsBatchCode());
-    			goodsBill.setLiableUser(review.getUserId());
-    			goodsBill.setProduceId(entity.getProduceId());
-    			goodsBill.setTitle(entity.getName()+"生产批次"+entity.getGoodsBatchCode()+"生产入库");
-    			long id = goodsBill.insert();
-    			RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(jdbcDao);
-    			detail.setGoodsId(entity.getGoodsId());
-    			detail.setNumber(entity.getAmount());
-    			detail.setGoodsBillId(id);
-    			detail.setType(goodsBill.getType());//生产单
-    			detail.insert();
-    			
-    			
+    			if(entity.getProduceType() == TaskProduceEntity.TASK_TYPE_PRODUCE){
+        			RepertoryGoodsBillEntity goodsBill = new RepertoryGoodsBillEntity(jdbcDao);
+        			goodsBill.setType(RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_PRODUCE);
+        			goodsBill.setGoodsBatchCode(entity.getGoodsBatchCode());
+        			goodsBill.setLiableUser(review.getUserId());
+        			goodsBill.setProduceId(entity.getProduceId());
+        			goodsBill.setTitle(entity.getName()+"生产批次"+entity.getGoodsBatchCode()+"生产入库");
+        			long id = goodsBill.insert();
+        			RepertoryGoodsBillDetailEntity detail = new RepertoryGoodsBillDetailEntity(jdbcDao);
+        			detail.setGoodsId(entity.getGoodsId());
+        			detail.setNumber(entity.getAmount());
+        			detail.setGoodsBillId(id);
+        			detail.setType(goodsBill.getType());//生产单
+        			detail.insert();
+    			}
     		}else if(entity.getStatus() == TaskProduceEntity.PRODUC_STATUS_REDO){//返工
     			if(jo.has(TaskReviewEntity.NUMBER) && !jo.get(TaskReviewEntity.NUMBER).isJsonNull()){
-    				if(jo.get(TaskReviewEntity.NUMBER).getAsInt() <= 0){
-    					return error("返工数量不能小于或等于0");
-    				}else if(jo.get(TaskReviewEntity.NUMBER).getAsInt() > entity.getAmount()){
+    				String number = jo.get(TaskReviewEntity.NUMBER).getAsString();
+    				if(!Format.isNumeric(number)){
+    					return error("返工数量必需为大于0的数字");
+    				}else if(Integer.parseInt(number) > entity.getAmount()){
     					return error("返工数量不能大于生产量");
     				}
     				review.setNumber(jo.get(TaskReviewEntity.NUMBER).getAsInt());//设置不合格数
     			}else{
     				return error("返工数量不能为空");
     			}
+    			entity.setRedoNumber(1+entity.getRedoNumber());
     		}else{
     			return error("处理结果不对");
     		}
     		review.setStatus(entity.getStatus());
     		review.insert();
-    		entity.update(TaskProduceEntity.STATUS);
+    		entity.update(TaskProduceEntity.STATUS,TaskProduceEntity.REDO_NUMBER);
         	return success("修改成功",entity.getProduceId());
     	}catch(Exception e){
     		logger.error("修改失败", e);
@@ -583,7 +617,9 @@ public class ProduceAPI extends Result{
     			return error("任务未开始,不能领料");
     		}
     		List<TaskLockComponentEntity> list = getMaterialProduceData(id);
+    		
     		if(list != null && list.size() > 0){
+    			entity.setApplyForNumber(entity.getApplyForNumber()+1);//变更申领次数
     			RepertoryGoodsBillEntity goodsBill = new RepertoryGoodsBillEntity(jdbcDao);
         		goodsBill.setProduceId(id);
         		goodsBill.setType(RepertoryGoodsBillEntity.GOODS_DETAIL_TYPE_APPLY);
@@ -605,7 +641,8 @@ public class ProduceAPI extends Result{
     		
     		entity.setStatus(TaskProduceEntity.PRODUC_STATUS_WORKING);//更新状态正在进行
     		entity.setStartTime(new Date());
-    		entity.update(TaskProduceEntity.STATUS,TaskProduceEntity.START_TIME);
+    		
+    		entity.update(TaskProduceEntity.STATUS,TaskProduceEntity.START_TIME,TaskProduceEntity.APPLY_FOR_NUMBER);
     		return success("提交申领成功");
     	}catch(Exception e){
     		return error("提交申领失败");
@@ -645,9 +682,10 @@ public class ProduceAPI extends Result{
     	entity.getName();
     	Map<String,Object> map = new HashMap<String,Object>();
     	map.put("data", entity);
-    	map.put("worker_list", getWorkerProduceData(id));
-    	map.put("material_list", getMaterialProduceData(id));
+    	map.put("worker_list", getWorkerProduceData(id));//获取任务员工
+    	map.put("material_list", getMaterialProduceData(id));//获取已消耗的原料
     	map.put("review_list", getCheckProduceData(id));//获取任务的审核数据
+    	map.put("need_material_list", getNeedMaterialList(entity));//获取所需的原料
         return success(map);
     }
 
@@ -724,11 +762,14 @@ public class ProduceAPI extends Result{
 	    		JsonArray ja = jo.get("worker_list").getAsJsonArray();
 	    		if(ja.size() > 0){
 	    			int current = 0;
+	    			JsonArray jaUser = new JsonArray();
+	    			String users = new String(","+entity.getDirector()+",");
 	    			for(JsonElement je : ja){
 	    				JsonObject object  = je.getAsJsonObject();
+	    				long userId = object.get("user_id").getAsLong();
 	    				TaskWorkerEntity worker = new TaskWorkerEntity(jdbcDao);
 	    				worker.setProduceId(entity.getProduceId());
-	    				worker.setUserId(object.get("user_id").getAsLong());
+	    				worker.setUserId(userId);
 	    				worker.setValid(StaticBean.YES);
 	    				worker.setNumber(object.get("value").getAsInt());
 	    				if(map.containsKey(worker.getUserId())){
@@ -741,6 +782,24 @@ public class ProduceAPI extends Result{
 	    				}
 	    				
 	    				current += worker.getNumber();
+	    				jaUser.add(userId);
+	    				if(users.indexOf(","+userId+",") == -1){//新增加的任务用户，执行微信通知
+	    					entity.sendWechatMessage(worker, null, null, null,null);
+	    				}else{
+	    					users = users.replaceAll(","+userId+",", ",");
+	    					entity.sendWechatMessage(worker, null, null, null,entity.getProduceName()+"(更改)");
+	    				}
+	    				String user = jaUser.toString();
+	    				entity.setDirector(user.substring(1, user.length()-1));
+	    			}
+	    			
+	    			if(users.length() > 2){//发送任务取消消息
+	    				String [] userids = users.split(",");
+	    				for(String uid : userids){
+	    					if(!PublicMethod.isEmptyStr(uid) && Format.isNumeric(uid)){
+	    						entity.sendWechatMessage(new TaskWorkerEntity(jdbcDao).setUserId(Long.parseLong(uid)), null, "", "任务被取消",null);
+	    					}
+	    				}
 	    			}
 	    			if(current != entity.getAmount()){
 	    				return error("工人生产量总和不等于生产量");
@@ -783,11 +842,11 @@ public class ProduceAPI extends Result{
     	if(PublicMethod.isEmptyStr(entity.getGoodsBatchCode())){
     		return error("批次号不能为空");
     	}
-    	if(entity.getProduceType() == 1){
+    	if(entity.getProduceType() == TaskProduceEntity.TASK_TYPE_PRODUCE){
     		if(PublicMethod.isEmptyValue(entity.getGoodsId())){
         		return error("产品不能为空");
         	}
-    	}else if(entity.getProduceType() == 2){
+    	}else if(entity.getProduceType() == TaskProduceEntity.TASK_TYPE_GENERAL){
     		entity.setGoodsId(0L);
     	}else{
     		return error("未知的任务类型");
@@ -815,6 +874,7 @@ public class ProduceAPI extends Result{
     		}else{
     			return error("请选择生产工人");
     		}
+    		
     		entity.setStatus(TaskProduceEntity.PRODUC_STATUS_PREP);
     		entity.setOperatorUserId(getLoginUser().getUserId());
     		entity.insert();

@@ -20,6 +20,11 @@ public class StaticBean
 	public static final String WEIXIN_MESSAGE_WAIT_SEND_LIST = "weixin:message:list:wait_send";
 	
 	/**
+	 * 生产任务审核提醒消息推送
+	 */
+	public static final String WEIXIN_MESSAGE_TYPE_TASK_CHECKWAIT_MESSAGE = "com.app.service.wechat.message.WxMessageOperatorCheckWaitImp";
+	
+	/**
 	 * 生产任务消息推送到工人
 	 */
 	public static final String WEIXIN_MESSAGE_TYPE_TASK_PRODUCE_MESSAGE = "com.app.service.wechat.message.WxMessageOperatorTaskProduceImp";

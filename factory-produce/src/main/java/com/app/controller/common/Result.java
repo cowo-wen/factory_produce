@@ -69,6 +69,11 @@ public class Result {
 		applicationContext = context;
 	}
 
+	/**
+	 * 该方法使用了事务，使用完需要提交事务
+	 * 出错需要回滚事务
+	 * @return
+	 */
 	public  JdbcDao getJdbcDao(){
 		return getJdbcDao("jdbcDao");
 	}

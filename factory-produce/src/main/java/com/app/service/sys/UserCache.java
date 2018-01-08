@@ -93,7 +93,7 @@ public class UserCache {
 	 */
 	public static void setCurrentRole(long userId,String sessionId,SysRoleEntity role){
 		
-		redis.hSet(RedisKeyBean.TEMP_ROLE_CURRENT_SELECT+sessionId,new String[]{"role","time","pc_index","wc_index","name"},new String[]{String.valueOf(role.getRoleId()),String.valueOf(System.currentTimeMillis()),role.getPcIndex(),role.getWxIndex(),role.getRoleName()});
+		redis.hSet(RedisKeyBean.TEMP_ROLE_CURRENT_SELECT+sessionId,new String[]{"role","time","pc_index","wc_index","name",SysRoleEntity.LINK_CODE},new String[]{String.valueOf(role.getRoleId()),String.valueOf(System.currentTimeMillis()),role.getPcIndex(),role.getWxIndex(),role.getRoleName(),role.getLinkCode()});
 		redis.expire(RedisKeyBean.TEMP_ROLE_CURRENT_SELECT+sessionId, 86400);//保存一日
 		
 	}

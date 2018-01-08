@@ -76,6 +76,19 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 	 * 拒绝
 	 */
 	public static final int PRODUC_STATUS_REFUSE=6;
+	
+	
+	/**
+	 * 任务类型 生产
+	 */
+	public static final int TASK_TYPE_PRODUCE = 1;
+	
+	/**
+	 * 任务类型 普通
+	 */
+	public static final int TASK_TYPE_GENERAL = 2;
+	
+	
 
 	public static final String PRODUCE_ID = "produce_id";
 	@Id
@@ -121,6 +134,20 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
     @Column
     private Integer produceType;
     
+    
+    /**
+     * 返工次数
+     */
+    public static final String REDO_NUMBER = "redo_number";
+    @Column
+    private Integer redoNumber;
+    
+    /**
+     * 申领次数
+     */
+    public static final String APPLY_FOR_NUMBER = "apply_for_number";
+    @Column
+    private Integer applyForNumber;
     
     /**
      * 备注
@@ -374,6 +401,14 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 	
 	
 
+	public Integer getRedoNumber() {
+		return redoNumber;
+	}
+
+	public void setRedoNumber(Integer redoNumber) {
+		this.redoNumber = redoNumber;
+	}
+
 	public String getDirector() {
 		return director;
 	}
@@ -399,6 +434,19 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 	public TaskProduceEntity setOperatorUserId(Long operatorUserId) {
 		this.operatorUserId = operatorUserId;
 		
+		return this;
+	}
+	
+	
+	
+	
+
+	public Integer getApplyForNumber() {
+		return applyForNumber;
+	}
+
+	public TaskProduceEntity setApplyForNumber(Integer applyForNumber) {
+		this.applyForNumber = applyForNumber;
 		return this;
 	}
 
@@ -428,18 +476,17 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 			throw new Exception("负责人不能为空");
 		}
 		
-		if(this.produceType == 1){
+		if(this.produceType == TASK_TYPE_PRODUCE){
 			RepertoryGoodsEntity goods = new RepertoryGoodsEntity(jdbcDao);
 			goods.setGoodsId(this.goodsId).loadVo();
 			if(PublicMethod.isEmptyStr(goods.getName())){
 				throw new Exception("未设定的产品信息");
 			}
-		}else if(this.produceType != 2){
+		}else if(this.produceType != TASK_TYPE_GENERAL){
 			throw new Exception("未知的任务类型");
 		}
-		
-		
-		
+		this.redoNumber = 0;
+		this.applyForNumber = 0;
 		long id = super.insert();
 		String[] userIds = director.split(",");
 		if(userIds == null || userIds.length == 0){
@@ -449,7 +496,7 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 		int num2 = amount%userIds.length;
 		List<TaskWorkerEntity> listWorker = new ArrayList<TaskWorkerEntity>();
 		StringBuilder userName = new StringBuilder();
-		StringBuilder proportion = new StringBuilder();
+		//StringBuilder proportion = new StringBuilder();
 		for(String userId : userIds){
 			if(Format.isNumeric(userId)){
 				SysUserEntity user = new SysUserEntity(jdbcDao);
@@ -463,7 +510,7 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 				worker.setProduceId(id);
 				worker.setValid(StaticBean.YES);
 				worker.setNumber(num+num2);
-				proportion.append(user.getUserName()).append("负责:").append(worker.getNumber()).append(";");
+				
 				worker.insert();
 				listWorker.add(worker);
 				if(num2 > 0) num2 = 0;
@@ -472,7 +519,7 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 			}
 		}
 		
-		if(this.produceType == 1){
+		if(this.produceType == TASK_TYPE_PRODUCE){
 			/**
 			 * 查找所有组件
 			 */
@@ -493,6 +540,7 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 								TaskLockComponentEntity lockComponent = new TaskLockComponentEntity(jdbcDao);
 								lockComponent.setGoodsBatchId(batch.getGoodsBatchId());
 								lockComponent.setProduceId(id);
+								lockComponent.setApplyForNumber(this.applyForNumber+1);//设置申领次数为1
 								if(batch.getInventory() - value >= 0 ){
 									lockComponent.setNumber(value);
 									lockComponent.insert();
@@ -526,22 +574,56 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 		}
 		if(listWorker.size() > 0){//发送微信数据
 			for(TaskWorkerEntity worker : listWorker){
-				JsonObject jo = new JsonObject();
-				jo.addProperty("user_id", worker.getUserId());
-				jo.addProperty("user_name", userName.toString());
-				jo.addProperty("date", PublicMethod.formatDateStr(new Date(), "MM-dd HH:mm"));
-				jo.addProperty("remark", this.remark);
-				jo.addProperty("first", produceName);
-				if(produceType == 1){
-					jo.addProperty("content", "生产任务;["+getName()+"]生产量"+this.amount+";工钱"+this.wages+";其中"+proportion.toString()+"请于"+PublicMethod.formatDateStr(this.beginTime, "MM月dd日HH:mm")+"至"+PublicMethod.formatDateStr(this.endTime, "MM月dd日HH:mm")+"完成");
-				}else{
-					jo.addProperty("content", "普通任务;生产量"+this.amount+";工钱"+this.wages+";其中"+proportion.toString()+"请于"+PublicMethod.formatDateStr(this.beginTime, "MM月dd日HH:mm")+"至"+PublicMethod.formatDateStr(this.endTime, "MM月dd日HH:mm")+"完成");
-				}
-                WeixinMessageContainer.pushMessage(StaticBean.WEIXIN_MESSAGE_TYPE_TASK_PRODUCE_MESSAGE,worker.getUserId(),jo);
+				sendWechatMessage(worker,userName.toString(),null,null,null);
 			}
 		}
 		return id;
 	}
+	
+	
+	/**
+	 * 发送微信消息
+	 * @param worker 工人对象
+	 * @param userName 负责员工姓名
+	 * @param remark
+	 * @param content
+	 */
+	public void sendWechatMessage(TaskWorkerEntity worker,String userName,String remark,String content,String title){
+		StringBuilder proportion = new StringBuilder();
+		proportion.append(worker.getUserName()).append("负责:").append(worker.getNumber()).append(";");
+		JsonObject jo = new JsonObject();
+		jo.addProperty("user_id", worker.getUserId());
+		if(PublicMethod.isEmptyStr(userName)){
+			jo.addProperty("user_name", worker.getUserName());
+		}else{
+			jo.addProperty("user_name", userName);
+		}
+		jo.addProperty("date", PublicMethod.formatDateStr(new Date(), "MM-dd HH:mm"));
+		jo.addProperty("remark", this.remark);
+		if(PublicMethod.isEmptyStr(title)){
+			jo.addProperty("first", produceName);
+		}else{
+			jo.addProperty("first", title);
+		}
+		
+		if(PublicMethod.isEmptyStr(content)){
+			if(produceType == 1){
+				jo.addProperty("content", "生产任务;["+getName()+"]生产量"+this.amount+";工钱"+this.wages+";其中"+proportion.toString()+"请于"+PublicMethod.formatDateStr(this.beginTime, "MM月dd日HH:mm")+"至"+PublicMethod.formatDateStr(this.endTime, "MM月dd日HH:mm")+"完成");
+			}else{
+				jo.addProperty("content", "普通任务;生产量"+this.amount+";工钱"+this.wages+";其中"+proportion.toString()+"请于"+PublicMethod.formatDateStr(this.beginTime, "MM月dd日HH:mm")+"至"+PublicMethod.formatDateStr(this.endTime, "MM月dd日HH:mm")+"完成");
+			}
+		}else{
+			jo.addProperty("content", content);
+		}
+		
+		if(remark != null){
+			jo.addProperty("remark", remark);
+		}else{
+			jo.addProperty("remark", this.remark);
+		}
+        WeixinMessageContainer.pushMessage(StaticBean.WEIXIN_MESSAGE_TYPE_TASK_PRODUCE_MESSAGE,worker.getUserId(),jo);
+	}
+	
 
 	@Override
 	public int delete() throws Exception {
@@ -572,6 +654,8 @@ public class TaskProduceEntity extends CacheVo  implements Serializable
 	public int update(String... fieldName) throws Exception {
 		return super.update(fieldName);
 	}
+
+	
 
 	
 

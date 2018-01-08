@@ -21,6 +21,7 @@ import com.app.dao.sql.cnd.LTCnd;
 import com.app.dao.sql.cnd.RTCnd;
 import com.app.entity.event.EventSanctionEntity;
 import com.app.entity.report.WorkerAchievementDayEntity;
+import com.app.entity.report.WorkerAchievementMonthEntity;
 import com.app.entity.task.TaskProduceEntity;
 import com.app.entity.task.TaskReviewEntity;
 import com.app.entity.task.TaskWorkerEntity;
@@ -38,7 +39,9 @@ public class WorkerAchievementCountTask implements Runnable
 
     private static boolean isRun = false;
 
-    private static int day = 0;
+    private static int day = -1;
+    
+    private static int month = -1;
     
 
     private WorkerAchievementCountTask() {
@@ -56,18 +59,29 @@ public class WorkerAchievementCountTask implements Runnable
         try
         {
         	jdbcDao = new Result().getJdbcDao();
-        	jdbcDao.useTransaction();
         	if(nowDay == day){
         		Thread.sleep(1800000);//休眠三十分钟
     			return ;
     		}else{
     			day = nowDay;
+    			
     		}
         	cal.add(Calendar.DAY_OF_YEAR, -1);
         	createCountDay(cal,jdbcDao);
-        	if(day == 1){//一月的开始
+        	
+        	
+        	/**
+        	 * 统计月份绩效
+        	 */
+        	cal.add(Calendar.DAY_OF_YEAR, -1);//2号统计上一月的效绩数据
+        	if(month != cal.get(Calendar.MONTH)){
+        		month = cal.get(Calendar.MONTH);
+        		cal.add(Calendar.MONTH, -1);
         		createCountMonth(cal,jdbcDao);
         	}
+        	
+        	jdbcDao.commit();
+        	
         }
         catch (Exception e)
         {
@@ -86,11 +100,50 @@ public class WorkerAchievementCountTask implements Runnable
         }
 
     }
+	
+	/**
+	 * 生成月绩效统计
+	 * @param cal
+	 * @param jdbcDao
+	 * @throws Exception
+	 */
 	public void createCountMonth(Calendar cal,JdbcDao jdbcDao) throws Exception{
-		
+		int countMonth = Integer.parseInt(PublicMethod.formatDateStr(cal.getTime(), "yyyyMM"));
+    	List<WorkerAchievementMonthEntity> listMonth = new WorkerAchievementMonthEntity(jdbcDao).getListVO(new SQLWhere(new EQCnd(WorkerAchievementMonthEntity.COUNT_MONTH, countMonth)));
+    	for(WorkerAchievementMonthEntity workerCount : listMonth){
+    		workerCount.delete();
+    	}
+    	listMonth.clear();//清空集合
+    	cal.set(Calendar.DAY_OF_MONTH, 1);
+    	int beginDay =Integer.parseInt(PublicMethod.formatDateStr(cal.getTime(), "yyyyMMdd"));//获取当前月份的第一日
+    	cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
+    	int endDay =Integer.parseInt(PublicMethod.formatDateStr(cal.getTime(), "yyyyMMdd"));//获取当前月份的第一日
+    	
+    	
+    	List<Map<String,Object>> list = jdbcDao.getList("select user_id,sum(task_time) task_time,sum(overtime) overtime,sum(rework_time) rework_time,sum(produce_money) produce_money,sum(bounty) bounty,sum(fines) fines from t_report_worker_ach_day where count_day >= "+beginDay+" and count_day <= "+endDay+" group by user_id");
+    	if(list != null && list.size() > 0){
+    		for(Map<String,Object> map : list){
+    			WorkerAchievementMonthEntity month = new WorkerAchievementMonthEntity(jdbcDao);
+    			month.setUserId((Long)map.get(WorkerAchievementDayEntity.USER_ID));
+    			month.setBounty((Double)map.get(WorkerAchievementDayEntity.BOUNTY));
+    			month.setCountMonth(countMonth);
+    			month.setFines((Double)map.get(WorkerAchievementDayEntity.FINES));
+    			month.setOvertime(Integer.parseInt(map.get(WorkerAchievementDayEntity.OVERTIME).toString()));
+    			month.setProduceMoney((Double)map.get(WorkerAchievementDayEntity.PRODUCE_MONEY));
+    			month.setReworkTime(Integer.parseInt(map.get(WorkerAchievementDayEntity.REWORK_TIME).toString()));
+    			month.setTaskTime(Integer.parseInt(map.get(WorkerAchievementDayEntity.TASK_TIME).toString()));
+    			month.insert();
+    		}
+    	}
 	}
 	
 	
+	/**
+	 * 生成日绩效统计
+	 * @param cal
+	 * @param jdbcDao
+	 * @throws Exception
+	 */
 	public void createCountDay(Calendar cal,JdbcDao jdbcDao) throws Exception{
 		
     	int countDay = Integer.parseInt(PublicMethod.formatDateStr(cal.getTime(), "yyyyMMdd"));
@@ -165,7 +218,7 @@ public class WorkerAchievementCountTask implements Runnable
     	
     	
     	
-    	jdbcDao.commit();
+    	
 	}
     
 

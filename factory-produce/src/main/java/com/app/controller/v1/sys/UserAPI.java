@@ -3,6 +3,8 @@ package com.app.controller.v1.sys;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -15,18 +17,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app.controller.common.Result;
 import com.app.dao.sql.SQLWhere;
+import com.app.dao.sql.cnd.INCnd;
 import com.app.dao.sql.cnd.LikeCnd;
 import com.app.dao.sql.cnd.NotEQCnd;
 import com.app.dao.sql.sort.DescSort;
+import com.app.entity.sys.SysUserBindingInfo;
 import com.app.entity.sys.SysUserEntity;
 import com.app.entity.sys.SysUserRoleEntity;
+import com.app.service.sys.UserCache;
 import com.app.util.PublicMethod;
 import com.app.util.StaticBean;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.xx.util.string.Format;
 import com.xx.util.string.MD5;
 
 /**
@@ -45,7 +49,7 @@ public class UserAPI extends Result{
     @RequestMapping(method = { RequestMethod.POST, RequestMethod.GET },value="/list")
     public String list(@RequestParam String aoData) {
     	JsonArray jo = new JsonParser().parse(aoData).getAsJsonArray();
-    	SQLWhere sql = new SQLWhere(new NotEQCnd(SysUserEntity.TYPE, SysUserEntity.USER_ADMIN)).orderBy(new DescSort(SysUserEntity.USER_ID));
+    	SQLWhere sql = new SQLWhere(new NotEQCnd(SysUserEntity.TYPE, SysUserEntity.USER_ADMIN)).and(new INCnd(SysUserEntity.VALID, new Integer[]{1,2})).orderBy(new DescSort(SysUserEntity.USER_ID));
     	int iDisplayStart = 0;// 起始  
     	int iDisplayLength = 10;// size 
     	int sEcho = 0;
@@ -103,12 +107,32 @@ public class UserAPI extends Result{
     	if(!PublicMethod.isEmptyStr(entity.getLoginName()) && entity.getLoginName().equals(SysUserEntity.ADMIN_USER_NAME)){
     		return error("超级用户不能删除");
     	}else{
-    		
-    		entity.useTransaction();
     		try {
-    			SysUserRoleEntity sur = new SysUserRoleEntity(jdbcDao);
+    			UserCache.delUserLoginTemp(id);//删除用户的登录信息
+    			/**
+    			 * 更新用户数据为不可用
+    			 */
+				entity.setValid(3);
+				String time = PublicMethod.formatDateStr("yyyyMMddHHmmss");
+				entity.setNumber(entity.getNumber()+"_"+time);
+				entity.setLoginName(entity.getLoginName()+"_"+time);
+				entity.update(SysUserEntity.VALID,SysUserEntity.NUMBER,SysUserEntity.LOGIN_NAME);
+				
+				/**
+				 * 删除微信绑定数据
+				 */
+				List<SysUserBindingInfo> listSUB = new SysUserBindingInfo(jdbcDao).setType(SysUserBindingInfo.BINDING_TYPE_WEIXIN).setUserId(id).queryCustomCacheValue(1);
+				if(listSUB != null && listSUB.size() > 0){
+					for(SysUserBindingInfo sub : listSUB){
+						sub.delete();
+					}
+				}
+				
+				/**
+				 * 删除用户角色数据
+				 */
+				SysUserRoleEntity sur = new SysUserRoleEntity(jdbcDao);
 				List<SysUserRoleEntity>  list = sur.setUserId(id).queryCustomCacheValue(0, null);
-				entity.delete();
 				if(list != null){
 					for(SysUserRoleEntity ur : list){
 						ur.delete();
@@ -228,7 +252,7 @@ public class UserAPI extends Result{
     	if(PublicMethod.isEmptyValue(entity.getMobile())){
     		return error("手机号码不能为空");
     	}else{
-    		if(!Format.isMobile(entity.getMobile())){
+    		if(!isMobile(entity.getMobile())){
     			return error("非法的手机号码");
     		}
     		entity.setLoginName(entity.getMobile());
@@ -249,5 +273,10 @@ public class UserAPI extends Result{
     	
     }
     
-    
+    public  boolean isMobile(String str)
+    {
+        Pattern p = Pattern.compile("^[1][3,4,5,7,8][0-9]{9}$");
+        Matcher m = p.matcher(str);
+        return m.matches();
+     }
 }

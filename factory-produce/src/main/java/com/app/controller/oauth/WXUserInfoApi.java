@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.app.controller.common.Result;
 import com.app.entity.sys.SysUserBindingInfo;
 import com.app.entity.sys.SysUserEntity;
+import com.app.service.sys.UserCache;
 import com.app.service.wechat.WeiXinServer;
 import com.app.util.PublicMethod;
 import com.app.util.RedisAPI;
@@ -41,6 +42,8 @@ public class WXUserInfoApi extends Result{
 	
     public static Log logger = LogFactory.getLog(WXUserInfoApi.class);
     
+    public static final String TEMP_WETHAT_TOKEN_CODE ="temp:wethat:token:code:";
+    
   
     
     @Autowired  
@@ -55,7 +58,7 @@ public class WXUserInfoApi extends Result{
     {
         try
         {
-        	String key = "temp:wethat:token:code:"+code;
+        	String key = TEMP_WETHAT_TOKEN_CODE+code;
         	RedisAPI redis = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
         	boolean bool = redis.exists(key);
         	if(!bool){
@@ -72,10 +75,13 @@ public class WXUserInfoApi extends Result{
             	jo.addProperty(SysUserBindingInfo.HEAD_IMG_URL, ub.getHeadImgUrl());
             	SysUserEntity user = new SysUserEntity(jdbcDao);
             	user.setUserId(ub.getUserId()).loadVo();
-            	jo.addProperty(SysUserEntity.USER_NAME, user.getUserName());
-            	jo.addProperty(SysUserEntity.NUMBER, user.getNumber());
-            	jo.addProperty(SysUserEntity.MOBILE, user.getMobile());
-            	ja.add(jo);
+            	if(user.getValid() == StaticBean.YES){
+            		jo.addProperty(SysUserEntity.USER_NAME, user.getUserName());
+                	jo.addProperty(SysUserEntity.NUMBER, user.getNumber());
+                	jo.addProperty(SysUserEntity.MOBILE, user.getMobile());
+                	ja.add(jo);
+            	}
+            	
             }
             return success(ja);
         }
@@ -117,7 +123,7 @@ public class WXUserInfoApi extends Result{
         	if(PublicMethod.isEmptyStr(pw)){
         		return error("密码不能为空");
         	}
-        	String identifyingcode = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("identifyingcode:login:"+session.getId());
+        	String identifyingcode = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(IdentifyingCodeAPI.IDENTIFYINGCODE_LOGIN+session.getId());
         	if(PublicMethod.isEmptyStr(identifyingcode)){
         		return error("验证码已失效");
         	}
@@ -127,7 +133,7 @@ public class WXUserInfoApi extends Result{
         	}
         	
         	
-        	String key = "temp:wethat:token:code:"+code;
+        	String key = TEMP_WETHAT_TOKEN_CODE+code;
         	RedisAPI redis = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
         	boolean bool = redis.exists(key);
         	if(!bool){
@@ -145,8 +151,14 @@ public class WXUserInfoApi extends Result{
         		return error("不存在的用户数据");
         	}
         	
+        	
+        	
         	if(userList.get(0).getValid() == StaticBean.NO){
         		return error("用户已被禁用，不能绑定");
+        	}else if(userList.get(0).getValid() == StaticBean.YES){
+        		
+        	}else{
+        		return error("不存在的用户");
         	}
         	
     		if(!userList.get(0).getPassword().equals(MD5.encode(pw))){
@@ -154,9 +166,9 @@ public class WXUserInfoApi extends Result{
         	}
         	
         	SysUserBindingInfo userBind = new SysUserBindingInfo(jdbcDao);
-        	List<SysUserBindingInfo> list = userBind.setType(1).setOpenId(openId).queryCustomCacheValue(0);
+        	List<SysUserBindingInfo> list = userBind.setType(1).setUserId(userList.get(0).getUserId()).queryCustomCacheValue(1);
         	if(list != null && list.size() > 0){
-        		return error("已绑定用户，不能重复绑定");
+        		return error("该用户已被绑定，请联系管理员解绑再试");
         	}
         	 WxMpUser wxMpUser = WeiXinServer.getWeChatWxMpService().userInfo(openId, null);
              
@@ -187,7 +199,7 @@ public class WXUserInfoApi extends Result{
     
     
     /**
-     * 用户绑定接口
+     * 用户解除绑定接口
      * @param code
      * @param login_user
      * @param password
@@ -203,7 +215,7 @@ public class WXUserInfoApi extends Result{
         	if(PublicMethod.isEmptyStr(code)){
         		return error("令牌不能为空");
         	}
-        	String key = "temp:wethat:token:code:"+code;
+        	String key = TEMP_WETHAT_TOKEN_CODE+code;
         	RedisAPI redis = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
         	boolean bool = redis.exists(key);
         	if(!bool){
@@ -219,6 +231,7 @@ public class WXUserInfoApi extends Result{
         	List<SysUserBindingInfo> list = userBind.setType(1).setOpenId(openId).queryCustomCacheValue(0);
         	if(list != null && list.size() > 0){
         		for(SysUserBindingInfo ub : list){
+        			UserCache.delUserLoginTemp(ub.getUserId());//删除用户的登录缓存
         			ub.delete();
         		}
         	}else{
@@ -272,13 +285,13 @@ public class WXUserInfoApi extends Result{
         	
         	
         	
-        	String identifyingcode = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get("identifyingcode:login:"+session.getId());
+        	String identifyingcode = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).get(IdentifyingCodeAPI.IDENTIFYINGCODE_LOGIN+session.getId());
         	if(!identifyingcode.equals(token)){
         		return error("验证码不正确");
         	}
         	
         	
-        	String key = "temp:wethat:token:code:"+jo.get("code").getAsString();
+        	String key = TEMP_WETHAT_TOKEN_CODE+jo.get("code").getAsString();
         	RedisAPI redis = new RedisAPI(RedisAPI.REDIS_CORE_DATABASE);
         	boolean bool = redis.exists(key);
         	if(!bool){

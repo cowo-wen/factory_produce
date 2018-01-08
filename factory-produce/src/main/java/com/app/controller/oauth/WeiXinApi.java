@@ -35,6 +35,8 @@ import com.app.dao.sql.SQLWhere;
 import com.app.dao.sql.cnd.EQCnd;
 import com.app.dao.sql.sort.AscSort;
 import com.app.entity.sys.SysApplicationEntity;
+import com.app.entity.sys.SysUserBindingInfo;
+import com.app.service.sys.UserCache;
 import com.app.service.wechat.MessageTempFactory;
 import com.app.service.wechat.WeiXinServer;
 import com.app.service.wechat.WeiXinStaticBean;
@@ -201,6 +203,15 @@ public class WeiXinApi extends Result{
                                 else if (event.equals(WeiXinStaticBean.EVENT.unsubscribe.toString()))
                                 {// 取消关注
                                 	logger.error("*用户"+userOpenId+"取消了关注*");
+                                	SysUserBindingInfo userBind = new SysUserBindingInfo(jdbcDao);
+                                	List<SysUserBindingInfo> list = userBind.setType(1).setOpenId(userOpenId).queryCustomCacheValue(0);
+                                	if(list != null && list.size() > 0){
+                                		for(SysUserBindingInfo ub : list){
+                                			UserCache.delUserLoginTemp(ub.getUserId());//删除用户的登录缓存
+                                			ub.delete();
+                                		}
+                                	}
+                                	
                                 }
                                 else
                                 {

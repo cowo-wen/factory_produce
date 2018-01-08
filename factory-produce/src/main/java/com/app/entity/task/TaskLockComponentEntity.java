@@ -118,6 +118,14 @@ public class TaskLockComponentEntity extends CacheVo  implements Serializable
     private Long goodsId;
     
     
+	/**
+     * 申领次数
+     */
+    public static final String APPLY_FOR_NUMBER = "apply_for_number";
+    @Column
+    private Integer applyForNumber;
+    
+    
     
 
 	public TaskLockComponentEntity(JdbcDao jdbcDao) {
@@ -161,6 +169,15 @@ public class TaskLockComponentEntity extends CacheVo  implements Serializable
 		return this;
 	}
 
+	public Integer getApplyForNumber() {
+		return applyForNumber;
+	}
+
+	public TaskLockComponentEntity setApplyForNumber(Integer applyForNumber) {
+		this.applyForNumber = applyForNumber;
+		return this;
+	}
+	
 	public Date getCreateTime() {
 		return createTime;
 	}

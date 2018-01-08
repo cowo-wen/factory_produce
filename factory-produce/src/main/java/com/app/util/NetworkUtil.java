@@ -60,7 +60,7 @@ public class NetworkUtil
         if (logger.isInfoEnabled()) {  
             logger.error("getIpAddress(HttpServletRequest) - X-Forwarded-For - String ip=" + ip);  
         }  
-  
+        
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
             if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
                 ip = request.getHeader("Proxy-Client-IP");  
@@ -101,7 +101,14 @@ public class NetworkUtil
                     break;  
                 }  
             }
-        }  
+        } 
+        
+        logger.error("X-Forwarded-For="+request.getHeader("X-Forwarded-For"));
+        logger.error("Proxy-Client-IP="+request.getHeader("Proxy-Client-IP"));
+        logger.error("WL-Proxy-Client-IP="+request.getHeader("WL-Proxy-Client-IP"));
+        logger.error("HTTP_CLIENT_IP="+request.getHeader("HTTP_CLIENT_IP"));
+        logger.error("HTTP_X_FORWARDED_FOR="+request.getHeader("HTTP_X_FORWARDED_FOR"));
+        logger.error("RemoteAddr="+request.getRemoteAddr());
         return ip;  
     }  
 }

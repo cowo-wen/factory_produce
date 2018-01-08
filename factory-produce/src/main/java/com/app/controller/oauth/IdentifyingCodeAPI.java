@@ -26,6 +26,8 @@ import com.xx.util.img.VerifyCode.Img;
 public class IdentifyingCodeAPI {
     public static Log logger = LogFactory.getLog(IdentifyingCodeAPI.class);
     
+    public static final String IDENTIFYINGCODE_LOGIN="identifyingcode:login:";
+    
   
     @Autowired  
     private HttpSession session;
@@ -37,7 +39,7 @@ public class IdentifyingCodeAPI {
 		Img img = VerifyCode.getImgCode(120, 41, 4, "1234567890");
 		
 		try{
-			new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).put("identifyingcode:login:"+session.getId(), img.verifyCode, 120);
+			new RedisAPI(RedisAPI.REDIS_CORE_DATABASE).put(IDENTIFYINGCODE_LOGIN+session.getId(), img.verifyCode, 120);
 			return img.base64String;
 		}catch(Exception e){
 			logger.error("验证码获取异常", e);
